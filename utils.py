@@ -83,4 +83,4 @@ def optimize(toolbox: Toolbox):
     best_ind = tools.selBest(pop, 1)[0]
     print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
 
-    return best_ind
+    return best_ind, best_ind.fitness.values

@@ -44,22 +44,21 @@ print(best_solution)
 
 
 
-# products_table['univariate_choice'] = pd.Series(best_solution[0])
-# print(products_table.head())
-#
-# products_table['univariate_gr_prot'] = products_table['univariate_choice'] * products_table['Gram_Prot']
-# products_table['univariate_gr_fat'] = products_table['univariate_choice'] * products_table['Gram_Fat']
-# products_table['univariate_gr_carb'] = products_table['univariate_choice'] * products_table['Gram_Carb']
-# products_table['univariate_cal'] = products_table['univariate_choice'] * products_table['Calories']
+best_set = best_solution[0][0]
+print(best_set)
+cost_by_stock = [x * y for x, y in zip(PRICE_DATA, best_set)]
+profit_by_srock = [x * y for x, y in zip(VALUE_DATA, best_set)]
 
-summary = pd.DataFrame.from_records(
-    [
-        [products_table['univariate_gr_prot'].sum(), gram_prot],
-        [products_table['univariate_gr_carb'].sum(), gram_carb],
-        [products_table['univariate_gr_fat'].sum(), gram_fat],
-        [products_table['univariate_cal'].sum(), sum((cal_prot, cal_fat, cal_carb))]
-    ])
-summary.columns = ['univariate', 'goal']
-summary.index = ['prot', 'carb', 'fat', 'cal']
+append_df = pd.DataFrame.from_records(
+    [[x, y, z] for x, y, z in zip(best_set, cost_by_stock, profit_by_srock)]
+)
+append_df.columns = ['Count', 'TotalCost', 'TotalProfit']
+
+summary = products_table.join(append_df)
+profit = sum(x * y for x, y in zip(VALUE_DATA, best_set))
+cost = sum(x * y for x, y in zip(PRICE_DATA, best_set))
 
 print(summary)
+print("Profit: " + str(profit))
+print("Final cost: " + str(cost))
+print("Limit budget: " + str(BUDGET))
