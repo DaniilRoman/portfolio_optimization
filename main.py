@@ -1,4 +1,4 @@
-from stock_data_downloader import construct_data_for_optimization
+from stock_data_downloader import construct_data_for_optimization, construct_data_for_backtest
 from stock_optimize import analyze, evaluate, gen_one_individual
 from utils import create_toolbox, optimize
 
@@ -7,7 +7,7 @@ max_stock_count_list = [10, 10, 10, 10, 10, 10]
 BUDGET = 2000
 PREDICT_PERIOD_DAYS = 30
 
-data = construct_data_for_optimization(stock_names, max_stock_count_list, PREDICT_PERIOD_DAYS)
+data = construct_data_for_backtest(stock_names, max_stock_count_list, PREDICT_PERIOD_DAYS)
 VALUE_DATA = list(data['Value'])
 PRICE_DATA = list(data['Price'])
 MAX_COUNT_DATA = list(data['MaxCount'])

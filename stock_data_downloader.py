@@ -33,3 +33,19 @@ def construct_data_for_optimization(stock_names, max_stock_count_list, predict_p
     result = pd.DataFrame.from_records(list_for_df)
     result.columns = ['Name', 'Value', 'Price', 'MaxCount']
     return result
+
+def construct_data_for_backtest(stock_names, max_stock_count_list, predict_period):
+    list_for_df = []
+    for stock_name, max_stock_count in zip(stock_names, max_stock_count_list):
+        stock_data = get_stock_data(stock_name)
+        backtest_data = stock_data[:-predict_period]
+        real_future_price = stock_data.tail(1)["y"].iloc[0]
+        current_price, future_price = get_prices(backtest_data, predict_period)
+
+        if max_stock_count == 0:
+            max_stock_count = 100
+        list_for_df.append([stock_name, current_price, future_price, real_future_price, max_stock_count])
+
+    result = pd.DataFrame.from_records(list_for_df)
+    result.columns = ['Name', 'Value', 'Price', 'RealPrice', 'MaxCount']
+    return result
