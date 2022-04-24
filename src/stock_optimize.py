@@ -1,6 +1,8 @@
 import pandas as pd
 import random
 
+FUN_WEIGHTS = {"profit_func": 1.0, "cost_func": -1.0}
+
 
 def gen_one_individual(max_count_data):
     return [random.randint(0, max_count) for max_count in max_count_data]
@@ -43,4 +45,5 @@ def analyze(best_solution, stock_table, budget):
     print("Future price: " + str(future_price))
     print("Real future price: " + str(real_future_price))
     print("Profit: " + str(future_price - cost) + " / " + str(round((future_price - cost) / cost * 100, 2)) + "%")
-    print("Real profit: " + str(real_future_price - cost) + " / " + str(round((real_future_price - cost) / cost * 100, 2)) + "%")
+    print("Real profit: " + str(real_future_price - cost) + " / " + str(
+        round((real_future_price - cost) / cost * 100, 2)) + "%")

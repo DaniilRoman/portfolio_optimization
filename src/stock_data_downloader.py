@@ -1,6 +1,8 @@
 import yfinance as yf
 from pandas import DataFrame
 import pandas as pd
+import json
+import urllib
 
 from stock_predict import get_future_value
 
@@ -14,11 +16,24 @@ def get_stock_data(stock_name: str, history_period="1y") -> DataFrame:
     return data
 
 
+def get_last_price(stock_data):
+    return stock_data.tail(1)["y"].iloc[0]
+
+
 def get_prices(stock_data, predict_period):
-    current_price = stock_data.tail(1)["y"].iloc[0]
+    current_price = get_last_price(stock_data)
     future_price = get_future_value(stock_data, predict_period)
     return current_price, future_price
 
+
+def get_price(stock_name, predict_period="1m"):
+    data = get_stock_data(stock_name, predict_period)
+    return get_last_price(data)
+
+def search_stocks(stock_name_query):
+    response = urllib.request.urlopen(f'https://query2.finance.yahoo.com/v1/finance/search?q={stock_name_query}')
+    content = response.read()
+    return [i['symbol'] for i in json.loads(content.decode('utf8'))['quotes']]
 
 def construct_data_for_optimization(stock_names, max_stock_count_list, predict_period):
     list_for_df = []
