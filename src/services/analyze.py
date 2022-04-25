@@ -8,7 +8,7 @@ def print_result(result: OptimizationResult):
         [[x, y, z, w] for x, y, z, w in
          zip(result.best_set, result.by_stock_cost, result.by_stock_predicted_cost, result.by_stock_real_cost)]
     )
-    append_df.columns = ['Count', 'TotalCost', 'TotalPrice', 'TotalRealPrice']
+    append_df.columns = ['Count', 'TotalCost', 'TotalPredictedCost', 'TotalRealCost']
 
     summary_df = pd.DataFrame.from_records(
         [[x, y, z, w] for x, y, z, w in zip(result.stock_names, result.current_prices, result.predicted_prices, result.real_prices)]
@@ -16,7 +16,7 @@ def print_result(result: OptimizationResult):
     summary_df.columns = ['Name', 'CurrentPrice', 'PredictedPrice', 'RealPrice']
 
     summary = summary_df.join(append_df)
-    print(summary)
+    print(summary.to_string())
     print("Limit budget: " + str(result.budget))
     print("Final cost: " + str(result.total_cost))
     print("Future price: " + str(result.total_predicted_cost))

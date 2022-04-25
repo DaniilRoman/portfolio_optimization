@@ -44,13 +44,3 @@ class OptimizationRepository:
 
     def save_opt_result(self, result: OptimizationResult):
         self.stock_prices.update_one({"_id": result._id}, {"$set": result.to_dict()}, upsert=True)
-
-
-if __name__ == '__main__':
-    optRepo = OptimizationRepository()
-    testJob = StockOptimizationJob(["test1", "test2"], [1, 3], 100, 30, _id="test1")
-    optRepo.save_job(testJob)
-    print(optRepo.get_job(testJob._id))
-
-    # optRepo.save_stock_price("05-03-2022", "APL", 12.22)
-    # print(optRepo.get_saved_stock_price("05-03-2022", "APL"))

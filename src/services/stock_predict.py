@@ -1,12 +1,12 @@
 from pandas import DataFrame
 from prophet import Prophet
 
-from optimization_job_repo import get_saved_stock_price, save_stock_price
+from optimization_job_repo import OptimizationRepository
 from utils import get_next_day
 
 
-def get_predict_value(stock_name: str, data: DataFrame, predict_period: int = 30) -> float:
-    exist_price = get_saved_stock_price(get_next_day(predict_period), stock_name)
+def get_predict_value(stock_name: str, data: DataFrame, repo: OptimizationRepository, predict_period: int = 30) -> float:
+    exist_price = repo.get_saved_stock_price(get_next_day(predict_period), stock_name)
     if exist_price is not None:
         return exist_price
 
@@ -19,5 +19,5 @@ def get_predict_value(stock_name: str, data: DataFrame, predict_period: int = 30
     res = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(1)
     res = res["yhat"].iloc[0]
     res = round(res, 2)
-    save_stock_price(get_next_day(predict_period), stock_name, res)
+    repo.save_stock_price(get_next_day(predict_period), stock_name, res)
     return res

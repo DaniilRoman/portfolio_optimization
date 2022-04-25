@@ -5,7 +5,7 @@ from pandas import DataFrame
 import json
 import urllib
 
-from optimization_job_repo import get_saved_stock_price, save_stock_price
+from optimization_job_repo import OptimizationRepository
 from src.services.stock_predict import get_predict_value
 from utils import get_current_date
 
@@ -23,19 +23,19 @@ def get_current_price(one_stock_data):
     return round(one_stock_data.tail(1)["y"].iloc[0], 2)
 
 
-def download_current_price(stock_name: str):
-    exist_price = get_saved_stock_price(get_current_date(), stock_name)
+def download_current_price(stock_name: str, repo: OptimizationRepository):
+    exist_price = repo.get_saved_stock_price(get_current_date(), stock_name)
     if exist_price is not None:
         return exist_price
 
     data = download_stock_data(stock_name, "1d")
     res = get_current_price(data)
-    save_stock_price(get_current_date(), stock_name, res)
+    repo.save_stock_price(get_current_date(), stock_name, res)
     return res
 
 
-def download_current_prices(stock_names: List[str]):
-    return [download_current_price(stock_name) for stock_name in stock_names]
+def download_current_prices(stock_names: List[str], repo: OptimizationRepository):
+    return [download_current_price(stock_name, repo) for stock_name in stock_names]
 
 
 def search_stocks(stock_name_query):
@@ -44,7 +44,8 @@ def search_stocks(stock_name_query):
     return [i['symbol'] for i in json.loads(content.decode('utf8'))['quotes']]
 
 
-def get_current_and_predict_prices(stock_name: str, predict_period: int, is_backtest: bool = False):
+def get_current_and_predict_prices(stock_name: str, predict_period: int, repo: OptimizationRepository,
+                                   is_backtest: bool = False):
     stock_data = download_stock_data(stock_name)
 
     if is_backtest:
@@ -54,5 +55,5 @@ def get_current_and_predict_prices(stock_name: str, predict_period: int, is_back
         real_future_price = 0
 
     current_price = get_current_price(stock_data)
-    predict_price = get_predict_value(stock_name, stock_data, predict_period)
+    predict_price = get_predict_value(stock_name, stock_data, repo, predict_period)
     return current_price, predict_price, real_future_price

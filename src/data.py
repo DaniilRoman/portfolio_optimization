@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from dataclasses import dataclass, field
 from dacite import from_dict, Config
@@ -13,15 +13,29 @@ class OptimizationJobStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     PREPARING_DATA = "PREPARING_DATA"
     OPTIMIZATION = "OPTIMIZATION"
+    LIMITS_TRANSFORMATION = "LIMITS_TRANSFORMATION"
     CANCELED = "CANCELED"
     FINISHED = "FINISHED"
+
+
+class StockLimitType(Enum):
+    COUNT = "COUNT"
+    PERCENT = "PERCENT"
+    PRICE = "PRICE"
+
+
+@dataclass
+class StockLimit:
+    type: StockLimitType
+    limits: List[int] = field(default_factory=list)
+    common_limit: Optional[int] = None
 
 
 @dataclass
 class StockOptimizationJob:
     # init data
     stock_names: List[str]
-    max_stock_count_list: List[int]
+    stock_limit: StockLimit
     budget: int
     predict_period_days: int
     is_backtest: bool = False
@@ -31,6 +45,7 @@ class StockOptimizationJob:
     predicted_prices: List[float] = field(default_factory=list)
     best_set: List[int] = field(default_factory=list)
     real_prices: List[int] = field(default_factory=list)
+    max_stock_count_list: List[int] = field(default_factory=list)
 
     # support data
     _id: str = str(uuid.uuid4())
@@ -38,10 +53,12 @@ class StockOptimizationJob:
 
     @staticmethod
     def from_dict(job_dict):
-        return from_dict(data_class=StockOptimizationJob, data=job_dict, config=Config(type_hooks={OptimizationJobStatus: OptimizationJobStatus}))
+        return from_dict(data_class=StockOptimizationJob, data=job_dict,
+                         config=Config(type_hooks={OptimizationJobStatus: OptimizationJobStatus}))
 
     def to_dict(self):
         return jsons.dump(self)
+
 
 @dataclass
 class OptimizationResult:
