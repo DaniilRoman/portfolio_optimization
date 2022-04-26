@@ -26,7 +26,7 @@ def get_sp500_stocks():
     df = first_table
 
     symbols = df['Symbol'].values.tolist()
-    excluded_stocks = ["BRK.B", "BF.B"]
+    excluded_stocks = ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE"]
     return list(filter(lambda s: s not in excluded_stocks, symbols))
 
 
@@ -89,6 +89,7 @@ def construct_result_step(job: StockOptimizationJob, repo: OptimizationRepositor
     if job.is_backtest:
         finish_sp500_price = download_current_price("SPY", repo)
         start_sp500_price = download_current_price("SPY", repo, get_prev_day(job.predict_period_days))
+        print("S&P500 price: " + str(round(finish_sp500_price, 5)))
         print("S&P500 price change: " + str(round(finish_sp500_price - start_sp500_price, 5)))
         print(
             "S&P500 price change: " + str(
@@ -118,11 +119,11 @@ if __name__ == '__main__':
     # stock_names = ["DIDI", "MSFT"]
     stock_names = get_sp500_stocks()
     stock_limit = StockLimit(StockLimitType.PERCENT, common_limit=30)
-    BUDGET = 2000
+    BUDGET = 20000
     PREDICT_PERIOD_DAYS = 30
 
     repo = OptimizationRepository()
-    run_etl(stock_names, stock_limit, BUDGET, PREDICT_PERIOD_DAYS, repo, 50)
+    run_etl(stock_names, stock_limit, BUDGET, PREDICT_PERIOD_DAYS, repo, parallelism=100)
     print(f"Time: {time.time()-start}")
 
 

@@ -10,7 +10,7 @@ import random
 # MUTPB is the probability for mutating an individual
 from data import StockOptimizationJob
 
-CXPB, MUTPB, NUMBER_OF_ITERATIONS = 0.5, 0.2, 100
+CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 250, 200
 FUN_WEIGHTS = {"profit_func": 1.0, "cost_func": -1.0}
 
 
@@ -18,14 +18,14 @@ def gen_one_individual(max_count_data):
     return [random.randint(0, max_count) for max_count in max_count_data]
 
 
-def evaluate(individual, value_data, price_data, budget):
+def evaluate(individual, predicted_prices, prices, budget):
     individual = individual[0]
-    profit = sum(x * y for x, y in zip(value_data, individual))
-    sum_price = sum(x * y for x, y in zip(price_data, individual))
+    predicted_cost = sum(x * y for x, y in zip(predicted_prices, individual))
+    cost = sum(x * y for x, y in zip(prices, individual))
 
-    if sum_price > budget:
-        return 0, 100000000000000000000
-    return profit, abs(budget - sum_price)
+    if cost > budget:
+        return -100000000000, 100000000000000000000
+    return predicted_cost-cost, abs(budget - cost)
 
 
 def create_toolbox(eval_func, gen_individual_func, weights: tuple) -> Toolbox:
@@ -37,14 +37,14 @@ def create_toolbox(eval_func, gen_individual_func, weights: tuple) -> Toolbox:
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
     toolbox.register("evaluate", eval_func)
-    toolbox.register("mate", tools.cxTwoPoint)
-    toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("mate", tools.cxUniform, indpb=0.05)
+    toolbox.register("mutate", tools.mutFlipBit, indpb=0.6)
+    toolbox.register("select", tools.selBest, k=10)
     return toolbox
 
 
 def optimize_internal(toolbox: Toolbox):
-    pop = toolbox.population(n=300)
+    pop = toolbox.population(n=NUMBER_OF_POPULATION)
 
     # Evaluate the entire population
     fitnesses = list(map(toolbox.evaluate, pop))

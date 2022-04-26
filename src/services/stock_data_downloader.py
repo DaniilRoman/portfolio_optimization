@@ -31,7 +31,7 @@ def download_current_price(stock_name: str, repo: OptimizationRepository, date: 
 
     data = download_stock_data(stock_name, "1d")
     res = get_current_price(data)
-    repo.save_stock_price(get_current_date_str(), stock_name, res)
+    repo.save_stock_price(date, stock_name, res)
     print(f"Downloaded: {stock_name}")
     return res
 
