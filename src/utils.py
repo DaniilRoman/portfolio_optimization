@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime, timedelta
 
 
@@ -16,9 +17,29 @@ def print_step_stats(pop):
     print("  Std %s" % std)
 
 
+def get_current_date_str():
+    return str(get_current_date())
+
+
 def get_current_date():
-    return str(datetime.date(datetime.now()))
+    return datetime.date(datetime.now()) - timedelta(days=1)
 
 
 def get_next_day(days):
-    return str(datetime.date(datetime.now()) + timedelta(days=days))
+    return str(get_current_date() + timedelta(days=days))
+
+
+def get_prev_day(days):
+    return str(get_current_date() - timedelta(days=days))
+
+
+class OnlyPutBlockingQueue(object):
+
+    def __init__(self):
+        self.queue = {}
+        self.cv = threading.Condition()
+
+    def put(self, key, value):
+        with self.cv:
+            self.queue[key] = value
+            self.cv.notify()

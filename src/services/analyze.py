@@ -5,10 +5,10 @@ from data import StockOptimizationJob, OptimizationResult
 
 def print_result(result: OptimizationResult):
     append_df = pd.DataFrame.from_records(
-        [[x, y, z, w] for x, y, z, w in
-         zip(result.best_set, result.by_stock_cost, result.by_stock_predicted_cost, result.by_stock_real_cost)]
+        [[x, y, z, w, q] for x, y, z, w, q in
+         zip(result.best_set, result.max_stock_count_list, result.by_stock_cost, result.by_stock_predicted_cost, result.by_stock_real_cost)]
     )
-    append_df.columns = ['Count', 'TotalCost', 'TotalPredictedCost', 'TotalRealCost']
+    append_df.columns = ['Count', 'LimitCount', 'TotalCost', 'TotalPredictedCost', 'TotalRealCost']
 
     summary_df = pd.DataFrame.from_records(
         [[x, y, z, w] for x, y, z, w in zip(result.stock_names, result.current_prices, result.predicted_prices, result.real_prices)]

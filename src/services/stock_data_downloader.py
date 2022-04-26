@@ -5,9 +5,10 @@ from pandas import DataFrame
 import json
 import urllib
 
+from data import PriceData
 from optimization_job_repo import OptimizationRepository
 from src.services.stock_predict import get_predict_value
-from utils import get_current_date
+from utils import get_current_date_str
 
 
 def download_stock_data(stock_name: str, history_period="1y") -> DataFrame:
@@ -23,14 +24,15 @@ def get_current_price(one_stock_data):
     return round(one_stock_data.tail(1)["y"].iloc[0], 2)
 
 
-def download_current_price(stock_name: str, repo: OptimizationRepository):
-    exist_price = repo.get_saved_stock_price(get_current_date(), stock_name)
+def download_current_price(stock_name: str, repo: OptimizationRepository, date: str = get_current_date_str()):
+    exist_price = repo.get_saved_stock_price(date, stock_name)
     if exist_price is not None:
         return exist_price
 
     data = download_stock_data(stock_name, "1d")
     res = get_current_price(data)
-    repo.save_stock_price(get_current_date(), stock_name, res)
+    repo.save_stock_price(get_current_date_str(), stock_name, res)
+    print(f"Downloaded: {stock_name}")
     return res
 
 
@@ -56,4 +58,4 @@ def get_current_and_predict_prices(stock_name: str, predict_period: int, repo: O
 
     current_price = get_current_price(stock_data)
     predict_price = get_predict_value(stock_name, stock_data, repo, predict_period)
-    return current_price, predict_price, real_future_price
+    return PriceData(current_price, predict_price, real_future_price)

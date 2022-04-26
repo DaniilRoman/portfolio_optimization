@@ -39,3 +39,5 @@ ujson==4.3.0
 urllib3==1.26.9
 yfinance==0.1.70
 zipp==3.6.0
+
+multithreading~=0.2.0

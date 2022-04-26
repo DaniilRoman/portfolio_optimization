@@ -20,4 +20,5 @@ def get_predict_value(stock_name: str, data: DataFrame, repo: OptimizationReposi
     res = res["yhat"].iloc[0]
     res = round(res, 2)
     repo.save_stock_price(get_next_day(predict_period), stock_name, res)
+    print(f"Predicted: {stock_name}")
     return res
