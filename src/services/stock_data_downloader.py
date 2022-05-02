@@ -5,8 +5,8 @@ import urllib
 
 from data import PriceData
 from optimization_job_repo import OptimizationRepository
-from src.services.stock_predict import get_predict_value
-from utils import get_current_date_str, get_prev_day
+from services.stock_predict import predict_value
+from utils import get_current_date_str, get_prev_day, get_next_day, get_current_date
 
 
 def download_stock_data(stock_name: str, history_period="1y", start_date: str = get_current_date_str()) -> DataFrame:
@@ -41,6 +41,20 @@ def search_stocks(stock_name_query):
     return [i['symbol'] for i in json.loads(content.decode('utf8'))['quotes']]
 
 
+def get_predict_value(stock_name: str, repo: OptimizationRepository,
+                      predict_period: int = 30, current_date: str = get_current_date()) -> float:
+    # exist_price = repo.get_saved_predicted_stock_price(current_date, stock_name)
+    # if exist_price is not None:
+    #     return exist_price
+
+    data = download_stock_data(stock_name, start_date=current_date, history_period="3y")
+    res = predict_value(data, predict_period)
+
+    repo.save_stock_predicted_price(current_date, stock_name, res)
+    print(f"Predicted: {stock_name}")
+    return res
+
+
 def construct_price_data(stock_name: str, predict_period: int, repo: OptimizationRepository,
                          is_backtest: bool = False, current_date: str = get_current_date_str()) -> PriceData:
     if is_backtest:
@@ -49,13 +63,10 @@ def construct_price_data(stock_name: str, predict_period: int, repo: Optimizatio
 
         real_future_price = download_current_price(stock_name, repo, future_date)
         current_price = download_current_price(stock_name, repo, current_date)
-
-        data = download_stock_data(stock_name, start_date=current_date)
-        predicted_price = get_predict_value(stock_name, data, repo, predict_period)
+        predicted_price = get_predict_value(stock_name, repo, predict_period, current_date)
     else:
         current_price = download_current_price(stock_name, repo, current_date)
-        data = download_stock_data(stock_name, start_date=current_date)
-        predicted_price = get_predict_value(stock_name, data, repo, predict_period)
+        predicted_price = get_predict_value(stock_name, repo, predict_period, current_date)
         real_future_price = 0
 
     return PriceData(stock_name, current_price, predicted_price, real_future_price)

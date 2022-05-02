@@ -149,5 +149,5 @@ if __name__ == '__main__':
     PREDICT_PERIOD_DAYS = 30
 
     repo = OptimizationRepository()
-    run_etl(stock_names, stock_limit, BUDGET, PREDICT_PERIOD_DAYS, repo, parallelism=100, is_backtest=False)
+    run_etl(stock_names, stock_limit, BUDGET, PREDICT_PERIOD_DAYS, repo, parallelism=100, is_backtest=True)
     print(f"Time: {time.time() - start}")

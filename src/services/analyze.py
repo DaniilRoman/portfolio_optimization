@@ -37,10 +37,11 @@ def construct_result(job: StockOptimizationJob) -> OptimizationResult:
     profit = round(total_predicted_cost - total_cost, 2)
     profit_percent = round((total_predicted_cost - total_cost) / total_cost * 100, 2)
     real_profit = total_real_cost - total_cost
-    real_profit_percent = round((total_real_cost - total_cost) / total_cost * 100, 2)
 
     real_prices = job.real_prices
-    if not job.is_backtest:
+    if job.is_backtest:
+        real_profit_percent = round((total_real_cost - total_cost) / total_cost * 100, 2)
+    else:
         real_prices = [0 for p in job.current_prices]
         by_stock_real_cost = [0 for p in job.current_prices]
         total_real_cost = 0
