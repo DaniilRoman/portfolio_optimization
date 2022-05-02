@@ -96,9 +96,10 @@ class OptimizationResult:
 
 @dataclass
 class PriceData:
+    stock_name: str
     current_price: float
     predict_price: float
     real_future_price: float
 
     def __hash__(self):
-        return hash((self.current_price, self.predict_price, self.real_future_price))
+        return hash((self.stock_name, self.current_price, self.predict_price, self.real_future_price))

@@ -10,7 +10,7 @@ import random
 # MUTPB is the probability for mutating an individual
 from data import StockOptimizationJob
 
-CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 250, 200
+CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 100, 10
 FUN_WEIGHTS = {"profit_func": 1.0, "cost_func": -1.0}
 
 
@@ -24,12 +24,12 @@ def evaluate(individual, predicted_prices, prices, budget):
     cost = sum(x * y for x, y in zip(prices, individual))
 
     if cost > budget:
-        return -100000000000, 100000000000000000000
-    return predicted_cost-cost, abs(budget - cost)
+        return 100000000000000000000,
+    return abs(budget - cost),
 
 
 def create_toolbox(eval_func, gen_individual_func, weights: tuple) -> Toolbox:
-    creator.create("FitnessFunc", base.Fitness, weights=weights)
+    creator.create("FitnessFunc", base.Fitness, weights=(-1.0,))
     creator.create("Individual", list, fitness=creator.FitnessFunc)
 
     toolbox = Toolbox()
@@ -39,7 +39,7 @@ def create_toolbox(eval_func, gen_individual_func, weights: tuple) -> Toolbox:
     toolbox.register("evaluate", eval_func)
     toolbox.register("mate", tools.cxUniform, indpb=0.05)
     toolbox.register("mutate", tools.mutFlipBit, indpb=0.6)
-    toolbox.register("select", tools.selBest, k=10)
+    toolbox.register("select", tools.selTournament, tournsize=3)
     return toolbox
 
 

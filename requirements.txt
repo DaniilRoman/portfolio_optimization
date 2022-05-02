@@ -20,9 +20,11 @@ lxml==4.8.0
 matplotlib==3.3.4
 mongoengine==0.24.1
 multitasking==0.0.10
+multithreading==0.2.0
 numpy==1.19.5
 pandas==1.1.5
 Pillow==8.4.0
+pool==0.1.2.dev0
 prophet==1.0.1
 PyMeeus==0.5.11
 pymongo==4.1.1
@@ -39,5 +41,3 @@ ujson==4.3.0
 urllib3==1.26.9
 yfinance==0.1.70
 zipp==3.6.0
-
-multithreading~=0.2.0
