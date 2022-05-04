@@ -10,7 +10,7 @@ import random
 # MUTPB is the probability for mutating an individual
 from data import StockOptimizationJob
 
-CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 100, 10
+CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 300, 50
 FUN_WEIGHTS = {"profit_func": 1.0, "cost_func": -1.0}
 
 

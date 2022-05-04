@@ -43,9 +43,9 @@ def search_stocks(stock_name_query):
 
 def get_predict_value(stock_name: str, repo: OptimizationRepository,
                       predict_period: int = 30, current_date: str = get_current_date()) -> float:
-    # exist_price = repo.get_saved_predicted_stock_price(current_date, stock_name)
-    # if exist_price is not None:
-    #     return exist_price
+    exist_price = repo.get_saved_predicted_stock_price(current_date, stock_name)
+    if exist_price is not None:
+        return exist_price
 
     data = download_stock_data(stock_name, start_date=current_date, history_period="3y")
     res = predict_value(data, predict_period)

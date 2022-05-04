@@ -22,7 +22,7 @@ def get_current_date_str():
 
 
 def get_current_date():
-    return datetime.date(datetime.now()) - timedelta(days=5)
+    return datetime.date(datetime.now()) - timedelta(days=7)
 
 
 def get_next_day(days):
