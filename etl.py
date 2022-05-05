@@ -80,7 +80,7 @@ def download_and_predict_step(job: StockOptimizationJob, repo: OptimizationRepos
 
     filtered_stock_names = [prices_pair.stock_name for prices_pair in prices]
 
-    def filter_max_stock_count(stock_name, stock_count):
+    def filter_max_stock_count(stock_name, stock_count) -> bool:
         if stock_name in filtered_stock_names:
             return True
         else:
@@ -177,7 +177,7 @@ if __name__ == '__main__':
                    'WY', 'WHR', 'WMB', 'WTW', 'WYNN', 'XEL', 'XYL', 'YUM', 'ZBRA', 'ZBH', 'ZION', 'ZTS']
     # stock_names = get_sp500_stocks()
     stock_names = list(
-        filter(lambda x: x not in ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE"], stock_names[:50]))
+        filter(lambda x: x not in ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE"], stock_names))
     stock_limit = StockLimit(StockLimitType.PERCENT, common_limit=40)
     BUDGET = 2000
     PREDICT_PERIOD_DAYS = 30
