@@ -126,12 +126,33 @@ def stock_limit_transform_step(job: StockOptimizationJob, repo: OptimizationRepo
     repo.save_job(job)
 
 
+def filter_zero_limit_step(job: StockOptimizationJob, repo: OptimizationRepository):
+    print("STEP: Stock limit filtering")
+    filter_indices = []
+    for i, val in enumerate(job.max_stock_count_list):
+        if val == 0:
+            filter_indices.append(i)
+
+    def except_filter_indices(list_values):
+        return [x for i, x in enumerate(list_values) if i not in filter_indices]
+
+    job.max_stock_count_list = except_filter_indices(job.max_stock_count_list)
+    job.stock_names = except_filter_indices(job.stock_names)
+    job.current_prices = except_filter_indices(job.current_prices)
+    job.best_set = except_filter_indices(job.best_set)
+    job.real_prices = except_filter_indices(job.real_prices)
+    job.predicted_prices = except_filter_indices(job.predicted_prices)
+
+    repo.save_job(job)
+
+
 def run_etl(stock_names: List[str], stock_limit: StockLimit, budget: int, predict_period_days: int,
             repo: OptimizationRepository, parallelism: int, is_backtest: bool):
     job = create_optimization_task_step(stock_names, stock_limit, budget, predict_period_days, is_backtest, repo)
     print(f"Job `{job._id}` created")
     download_and_predict_step(job, repo, parallelism)
     stock_limit_transform_step(job, repo)
+    filter_zero_limit_step(job, repo)
     optimization_step(job, repo)
     construct_result_step(job, repo)
 
@@ -177,8 +198,8 @@ if __name__ == '__main__':
                    'WY', 'WHR', 'WMB', 'WTW', 'WYNN', 'XEL', 'XYL', 'YUM', 'ZBRA', 'ZBH', 'ZION', 'ZTS']
     # stock_names = get_sp500_stocks()
     stock_names = list(
-        filter(lambda x: x not in ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE"], stock_names))
-    stock_limit = StockLimit(StockLimitType.PERCENT, common_limit=40)
+        filter(lambda x: x not in ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE"], stock_names[:60]))
+    stock_limit = StockLimit(StockLimitType.PERCENT, common_limit=30)
     BUDGET = 2000
     PREDICT_PERIOD_DAYS = 30
 
