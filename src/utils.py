@@ -1,6 +1,8 @@
 import threading
 from datetime import datetime, timedelta
 
+round_precise = 5
+
 
 def print_step_stats(pop):
     # Gather all the fitnesses in one list and print the stats
@@ -22,15 +24,31 @@ def get_current_date_str():
 
 
 def get_current_date():
-    return datetime.date(datetime.now()) - timedelta(days=8)
+    # return datetime.date(datetime.now()) - timedelta(days=40)
+    return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
 
 
-def get_next_day(days):
-    return str(get_current_date() + timedelta(days=days))
+# 11 - 2022-04-27
+
+# 37 - 2022-04-01
+# 40 - 2022-03-29
+# 2021-06-01
 
 
-def get_prev_day(days):
-    return str(get_current_date() - timedelta(days=days))
+def get_next_day(days, start_day: str = None):
+    if start_day is None:
+        date = get_current_date()
+    else:
+        date = datetime.strptime(start_day, "%Y-%m-%d").date()
+    return str(date + timedelta(days=days))
+
+
+def get_prev_day(days, start_day: str = None):
+    if start_day is None:
+        date = get_current_date()
+    else:
+        date = datetime.strptime(start_day, "%Y-%m-%d").date()
+    return str(date - timedelta(days=days))
 
 
 class OnlyPutBlockingQueue(object):

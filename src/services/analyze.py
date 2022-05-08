@@ -1,6 +1,7 @@
 import pandas as pd
 
 from data import StockOptimizationJob, OptimizationResult
+from utils import round_precise
 
 
 def print_result(result: OptimizationResult):
@@ -26,21 +27,21 @@ def print_result(result: OptimizationResult):
 
 
 def construct_result(job: StockOptimizationJob) -> OptimizationResult:
-    by_stock_cost = [round(x * y, 2) for x, y in zip(job.current_prices, job.best_set)]
-    by_stock_predicted_cost = [round(x * y, 2) for x, y in zip(job.predicted_prices, job.best_set)]
-    by_stock_real_cost = [round(x * y, 2) for x, y in zip(job.real_prices, job.best_set)]
+    by_stock_cost = [round(x * y, round_precise) for x, y in zip(job.current_prices, job.best_set)]
+    by_stock_predicted_cost = [round(x * y, round_precise) for x, y in zip(job.predicted_prices, job.best_set)]
+    by_stock_real_cost = [round(x * y, round_precise) for x, y in zip(job.real_prices, job.best_set)]
 
-    total_predicted_cost = round(sum(x * y for x, y in zip(job.predicted_prices, job.best_set)), 2)
-    total_cost = round(sum(x * y for x, y in zip(job.current_prices, job.best_set)), 2)
-    total_real_cost = round(sum(x * y for x, y in zip(job.real_prices, job.best_set)), 2)
+    total_predicted_cost = round(sum(x * y for x, y in zip(job.predicted_prices, job.best_set)), round_precise)
+    total_cost = round(sum(x * y for x, y in zip(job.current_prices, job.best_set)), round_precise)
+    total_real_cost = round(sum(x * y for x, y in zip(job.real_prices, job.best_set)), round_precise)
 
-    profit = round(total_predicted_cost - total_cost, 2)
-    profit_percent = round((total_predicted_cost - total_cost) / total_cost * 100, 2)
+    profit = round(total_predicted_cost - total_cost, round_precise)
+    profit_percent = round((total_predicted_cost - total_cost) / total_cost * 100, round_precise)
     real_profit = total_real_cost - total_cost
 
     real_prices = job.real_prices
     if job.is_backtest:
-        real_profit_percent = round((total_real_cost - total_cost) / total_cost * 100, 2)
+        real_profit_percent = round((total_real_cost - total_cost) / total_cost * 100, round_precise)
     else:
         real_prices = [0 for p in job.current_prices]
         by_stock_real_cost = [0 for p in job.current_prices]

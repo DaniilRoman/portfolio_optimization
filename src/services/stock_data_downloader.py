@@ -6,20 +6,20 @@ import urllib
 from data import PriceData
 from optimization_job_repo import OptimizationRepository
 from services.stock_predict import predict_value
-from utils import get_current_date_str, get_prev_day, get_next_day, get_current_date
+from utils import get_current_date_str, get_prev_day, get_next_day, get_current_date, round_precise
 
 
-def download_stock_data(stock_name: str, history_period="1y", start_date: str = get_current_date_str()) -> DataFrame:
+def download_stock_data(stock_name: str, start_date: str = get_current_date_str(), end_date=get_next_day(1)) -> DataFrame:
     stock = yf.Ticker(stock_name)
 
-    hist = stock.history(period=history_period, end=start_date)
+    hist = stock.history(start=start_date, end=end_date)
     data = hist["Close"].to_frame("y")
     data["ds"] = data.index.date
     return data
 
 
 def get_current_price(one_stock_data):
-    return round(one_stock_data.tail(1)["y"].iloc[0], 2)
+    return round(one_stock_data.tail(1)["y"].iloc[0], round_precise)
 
 
 def download_current_price(stock_name: str, repo: OptimizationRepository, date: str = get_current_date_str()):
@@ -27,7 +27,7 @@ def download_current_price(stock_name: str, repo: OptimizationRepository, date: 
     if exist_price is not None:
         return exist_price
 
-    data = download_stock_data(stock_name, "1d", date)
+    data = download_stock_data(stock_name, start_date=date, end_date=get_next_day(30, date))[:1]
     res = get_current_price(data)
 
     repo.save_stock_price(date, stock_name, res)
@@ -47,7 +47,7 @@ def get_predict_value(stock_name: str, repo: OptimizationRepository,
     if exist_price is not None:
         return exist_price
 
-    data = download_stock_data(stock_name, start_date=current_date, history_period="3y")
+    data = download_stock_data(stock_name, start_date=get_prev_day(365*3, current_date), end_date=current_date)
     res = predict_value(data, predict_period)
 
     repo.save_stock_predicted_price(current_date, stock_name, res)

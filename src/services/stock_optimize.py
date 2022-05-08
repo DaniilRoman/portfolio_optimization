@@ -1,6 +1,5 @@
 from deap import base, creator, tools, algorithms
 from deap.base import Toolbox
-from tqdm import tqdm
 
 import random
 
@@ -8,7 +7,7 @@ import random
 # MUTPB is the probability for mutating an individual
 from data import StockOptimizationJob
 
-CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 500, 70
+CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 100, 70 # 200
 FUN_WEIGHTS = {"cost_func": -1.0, "profit_func": 1.0}
 
 
@@ -26,15 +25,14 @@ def evaluate(individual, predicted_prices, prices, budget):
         return 100000000000000000000, -100000000000000000000
     return abs(budget - cost), predicted_cost - cost
 
-
-def create_toolbox(eval_func, weights: tuple) -> Toolbox:
+def create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:
     creator.create("FitnessFunc", base.Fitness, weights=weights)
     creator.create("Individual", list, fitness=creator.FitnessFunc)
 
     toolbox = Toolbox()
     toolbox.register("evaluate", eval_func)
     toolbox.register("mate", tools.cxUniform, indpb=0.1)
-    toolbox.register("mutate", tools.mutFlipBit, indpb=0.4)
+    toolbox.register("mutate", mutFlipBit, indpb=0.4)
     toolbox.register("select", tools.selTournament, tournsize=3)
     return toolbox
 
@@ -55,6 +53,13 @@ def optimize(job: StockOptimizationJob):
     def gen_one_individual_wrapper():
         return gen_one_individual(job.max_stock_count_list)
 
-    toolbox = create_toolbox(evaluate_func_wrapper, tuple(FUN_WEIGHTS.values()))
+    def mutFlipBit(individual, indpb):
+        for i in range(len(individual)):
+            if random.random() < indpb:
+                individual[i] = job.max_stock_count_list[i] - individual[i]
+
+        return individual,
+
+    toolbox = create_toolbox(evaluate_func_wrapper, tuple(FUN_WEIGHTS.values()), tools.mutFlipBit)
     best_solution = optimize_internal(toolbox, gen_one_individual_wrapper)
     return tools.selBest(best_solution[0], 1)[0]
