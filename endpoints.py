@@ -5,6 +5,7 @@ from data import StockLimit
 from etl import run_etl_async
 from services.stock_data_downloader import search_stocks, download_current_price
 from optimization_job_repo import OptimizationRepository
+from stock_names import russian_stocks
 
 repo = OptimizationRepository()
 executor = ThreadPoolExecutor(10)
@@ -19,6 +20,11 @@ def get_price_endpoint(stock_name):
 @app.route("/stock/<stock_name_query>/search")
 def search_stocks_endpoint(stock_name_query):
     return {"stocks": search_stocks(stock_name_query)}
+
+
+@app.route("/stock/rus")
+def search_stocks_endpoint():
+    return {"stocks": russian_stocks}
 
 
 @app.route("/job/<task_id>/status")
@@ -37,11 +43,11 @@ def get_result_endpoint(task_id):
 def start_optimization_endpoint():
     data = request.json
     print(data)
-    job_id = run_etl_async(data['stock_names'], StockLimit.from_dict(data['stock_limit']), data['budget'], data['predicted_period_days'],
+    job_id = run_etl_async(data['stock_names'], StockLimit.from_dict(data['stock_limit']), data['budget'],
+                           data['predicted_period_days'],
                            repo, parallelism=50, is_backtest=False, executor=executor)
     return {"job_id": job_id}
 
 
 if __name__ == '__main__':
     app.run(port=9010)
-
