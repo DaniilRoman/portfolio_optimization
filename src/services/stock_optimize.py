@@ -16,11 +16,9 @@ def gen_one_individual(max_count_data):
 
 
 def evaluate(individual, predicted_prices, prices, budget):
-    # individual = individual[0]
     predicted_cost = sum(x * y for x, y in zip(predicted_prices, individual))
     cost = sum(x * y for x, y in zip(prices, individual))
 
-    # print(f"COST: {cost}")
     if cost > budget:
         return 100000000000000000000, -100000000000000000000
     return abs(budget - cost), predicted_cost - cost

@@ -15,11 +15,12 @@ class OptimizationRepository:
         self.jobs = self.db["jobs"]
         self.results = self.db["results"]
 
-    def get_job(self, id: str):
+    def get_job(self, id: str) -> Optional[StockOptimizationJob]:
         res = self.jobs.find_one({"_id": id})
         try:
             return StockOptimizationJob.from_dict(res)
         except:
+            print(f"Cannot parse job: {id}")
             return None
 
     def save_job(self, job: StockOptimizationJob):

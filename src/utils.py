@@ -24,15 +24,8 @@ def get_current_date_str():
 
 
 def get_current_date():
-    # return datetime.date(datetime.now()) - timedelta(days=40)
-    return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
-
-
-# 11 - 2022-04-27
-
-# 37 - 2022-04-01
-# 40 - 2022-03-29
-# 2021-06-01
+    return datetime.date(datetime.now())
+    # return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
 
 
 def get_next_day(days, start_day: str = None):

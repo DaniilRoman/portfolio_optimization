@@ -30,6 +30,11 @@ class StockLimit:
     limits: List[int] = field(default_factory=list)
     common_limit: Optional[int] = None
 
+    @staticmethod
+    def from_dict(job_dict):
+        return from_dict(data_class=StockLimit, data=job_dict,
+                         config=Config(type_hooks={StockLimitType: StockLimitType}))
+
 
 @dataclass
 class StockOptimizationJob:
@@ -54,7 +59,7 @@ class StockOptimizationJob:
     @staticmethod
     def from_dict(job_dict):
         return from_dict(data_class=StockOptimizationJob, data=job_dict,
-                         config=Config(type_hooks={OptimizationJobStatus: OptimizationJobStatus}))
+                         config=Config(type_hooks={OptimizationJobStatus: OptimizationJobStatus, StockLimitType: StockLimitType}))
 
     def to_dict(self):
         return jsons.dump(self)

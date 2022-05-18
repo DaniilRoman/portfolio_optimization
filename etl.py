@@ -9,11 +9,10 @@ from tqdm import tqdm
 
 from optimization_job_repo import OptimizationRepository
 from services.analyze import construct_result, print_result
-from data import StockOptimizationJob, OptimizationJobStatus, StockLimit, StockLimitType, PriceData
+from data import StockOptimizationJob, OptimizationJobStatus, StockLimit, PriceData
 from services.stock_data_downloader import construct_price_data, download_current_price
 from services.stock_limit_transformer import transform_stock_limit
 from services.stock_optimize import optimize
-from stock_names import sp500, russian_stocks
 from utils import get_prev_day, OnlyPutBlockingQueue, round_precise, get_current_date_str
 
 
@@ -111,7 +110,7 @@ def construct_result_step(job: StockOptimizationJob, repo: OptimizationRepositor
     print_result(opt_result)
 
     if job.is_backtest:
-        index_name = "IMOEX.ME" # "SPY"
+        index_name = "IMOEX.ME"  # "SPY"
         finish_sp500_price = download_current_price(index_name, repo)
         start_sp500_price = download_current_price(index_name, repo, get_prev_day(job.predict_period_days))
         print("S&P500 start price: " + str(round(start_sp500_price, round_precise)))
@@ -159,31 +158,22 @@ def run_etl(stock_names: List[str], stock_limit: StockLimit, budget: int, predic
             repo: OptimizationRepository, parallelism: int, is_backtest: bool):
     job = create_optimization_task_step(stock_names, stock_limit, budget, predict_period_days, is_backtest, repo)
     print(f"Job `{job._id}` created")
+    run_etl_internal(job, repo, parallelism)
+    return job._id
+
+
+def run_etl_async(stock_names: List[str], stock_limit: StockLimit, budget: int, predict_period_days: int,
+                  repo: OptimizationRepository, parallelism: int, is_backtest: bool, executor: ThreadPoolExecutor):
+    job = create_optimization_task_step(stock_names, stock_limit, budget, predict_period_days, is_backtest, repo)
+    print(f"Job `{job._id}` created")
+    executor.submit(lambda: run_etl_internal(job, repo, parallelism))
+    return job._id
+
+
+def run_etl_internal(job: StockOptimizationJob, repo: OptimizationRepository, parallelism: int):
     download_and_predict_step(job, repo, parallelism)
     filter_zero_limit_step(job, repo)
     stock_limit_transform_step(job, repo)
     filter_zero_limit_step(job, repo)
     optimization_step(job, repo)
     construct_result_step(job, repo)
-
-
-if __name__ == '__main__':
-    start = time.time()
-    # stock_names = ["DIDI", "MSFT", "AMD", "BABA", "NVDA", "AAL"]
-    # stock_names = sp500
-    stock_names = russian_stocks
-    # stock_names = get_sp500_stocks()
-    stock_names = list(
-        filter(lambda x: x not in ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE", "RENI.ME", "SLEN.ME", "MDMG.ME"], stock_names[:50]))
-    stock_limit = StockLimit(StockLimitType.PERCENT, common_limit=30)
-    BUDGET = 150000
-    PREDICT_PERIOD_DAYS = 30
-
-    repo = OptimizationRepository()
-    run_etl(stock_names, stock_limit, BUDGET, PREDICT_PERIOD_DAYS, repo, parallelism=50, is_backtest=True)
-    print(f"Time: {time.time() - start}")
-
-# compare up trend
-# compare down trend
-# change data count to predict accurancy
-# change optimize params
