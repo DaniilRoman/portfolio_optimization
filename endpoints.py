@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import CORS
 from concurrent.futures import ThreadPoolExecutor
 
 from data import StockLimit
@@ -10,6 +11,7 @@ from stock_names import russian_stocks
 repo = OptimizationRepository()
 executor = ThreadPoolExecutor(10)
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/stock/<stock_name>/price")
@@ -23,7 +25,7 @@ def search_stocks_endpoint(stock_name_query):
 
 
 @app.route("/stock/rus")
-def search_stocks_endpoint():
+def rus_stocks_endpoint():
     return {"stocks": russian_stocks}
 
 
