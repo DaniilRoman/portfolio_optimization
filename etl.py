@@ -172,9 +172,13 @@ def run_etl_async(stock_names: List[str], stock_limit: StockLimit, budget: int, 
 
 
 def run_etl_internal(job: StockOptimizationJob, repo: OptimizationRepository, parallelism: int):
-    download_and_predict_step(job, repo, parallelism)
-    filter_zero_limit_step(job, repo)
-    stock_limit_transform_step(job, repo)
-    filter_zero_limit_step(job, repo)
-    optimization_step(job, repo)
-    construct_result_step(job, repo)
+    try:
+        download_and_predict_step(job, repo, parallelism)
+        filter_zero_limit_step(job, repo)
+        stock_limit_transform_step(job, repo)
+        filter_zero_limit_step(job, repo)
+        optimization_step(job, repo)
+        construct_result_step(job, repo)
+    except Exception as e:
+        print(e)
+
