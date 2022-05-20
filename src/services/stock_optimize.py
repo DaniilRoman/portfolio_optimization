@@ -20,7 +20,7 @@ def evaluate(individual, predicted_prices, prices, budget):
     cost = sum(x * y for x, y in zip(prices, individual))
 
     if cost > budget:
-        return 100000000000000000000, -100000000000000000000
+        return 100000000000, -10000000000
     return abs(budget - cost), predicted_cost - cost
 
 def create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:

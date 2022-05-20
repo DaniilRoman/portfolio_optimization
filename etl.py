@@ -150,6 +150,7 @@ def filter_zero_limit_step(job: StockOptimizationJob, repo: OptimizationReposito
     job.best_set = except_filter_indices(job.best_set)
     job.real_prices = except_filter_indices(job.real_prices)
     job.predicted_prices = except_filter_indices(job.predicted_prices)
+    job.max_stock_count_list = job.max_stock_count_list[:len(job.stock_names)] # TODO
 
     repo.save_job(job)
 

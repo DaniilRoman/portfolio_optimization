@@ -7,16 +7,16 @@ def transform_stock_limit(job: StockOptimizationJob, repo: OptimizationRepositor
     stock_limit = job.stock_limit
     if stock_limit.type == StockLimitType.COUNT and stock_limit.common_limit is None:
         stock_limits = stock_limit.limits
-    if stock_limit.type == StockLimitType.COUNT and stock_limit.common_limit is not None:
+    elif stock_limit.type == StockLimitType.COUNT and stock_limit.common_limit is not None:
         stock_limits = [stock_limit.common_limit for i in range(len(job.stock_names))]
-    if stock_limit.type == StockLimitType.PRICE and stock_limit.common_limit is None:
+    elif stock_limit.type == StockLimitType.PRICE and stock_limit.common_limit is None:
         stock_limits = [int(total_price / price) for total_price, price in zip(stock_limit.limits, job.current_prices)]
-    if stock_limit.type == StockLimitType.PRICE and stock_limit.common_limit is not None:
+    elif stock_limit.type == StockLimitType.PRICE and stock_limit.common_limit is not None:
         stock_limits = [int(stock_limit.common_limit / price) for price in job.current_prices]
 
-    if stock_limit.type == StockLimitType.PERCENT and stock_limit.common_limit is None:
+    elif stock_limit.type == StockLimitType.PERCENT and stock_limit.common_limit is None:
         stock_limits = [int((job.budget * percent / 100) / price) for percent, price in zip(stock_limit.limits, job.current_prices)]
-    if stock_limit.type == StockLimitType.PERCENT and stock_limit.common_limit is not None:
+    elif stock_limit.type == StockLimitType.PERCENT and stock_limit.common_limit is not None:
         total_price = (job.budget * stock_limit.common_limit / 100)
         stock_limits = [int(total_price / price) for price in job.current_prices]
 

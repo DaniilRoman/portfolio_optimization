@@ -1,5 +1,5 @@
 from flask import Flask, request
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from concurrent.futures import ThreadPoolExecutor
 
 from data import StockLimit
@@ -11,7 +11,7 @@ from stock_names import russian_stocks
 repo = OptimizationRepository()
 executor = ThreadPoolExecutor(10)
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 @app.route("/stock/<stock_name>/price")

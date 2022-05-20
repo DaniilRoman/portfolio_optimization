@@ -24,8 +24,8 @@ def get_current_date_str():
 
 
 def get_current_date():
-    return datetime.date(datetime.now())
-    # return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
+    # return datetime.date(datetime.now())
+    return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
 
 
 def get_next_day(days, start_day: str = None):

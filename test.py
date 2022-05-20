@@ -14,7 +14,7 @@ if __name__ == '__main__':
     stock_names = list(
         filter(lambda x: x not in ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE", "RENI.ME", "SLEN.ME", "MDMG.ME"], stock_names[:50]))
     stock_limit = StockLimit(StockLimitType.PERCENT, common_limit=30)
-    BUDGET = 150000
+    BUDGET = 100000
     PREDICT_PERIOD_DAYS = 30
 
     repo = OptimizationRepository()
