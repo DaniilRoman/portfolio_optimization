@@ -1,7 +1,7 @@
 import pandas as pd
 
-from data import StockOptimizationJob, OptimizationResult
-from utils import round_precise
+from data.data import StockOptimizationJob, OptimizationResult
+from utils.utils import round_precise
 
 
 def print_result(result: OptimizationResult):

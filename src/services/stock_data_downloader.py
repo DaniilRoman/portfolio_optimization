@@ -3,10 +3,10 @@ from pandas import DataFrame
 import json
 import urllib
 
-from data import PriceData
-from optimization_job_repo import OptimizationRepository
+from data.data import PriceData
+from repository.optimization_job_repo import OptimizationRepository
 from services.stock_predict import predict_value
-from utils import get_current_date_str, get_prev_day, get_next_day, get_current_date, round_precise
+from utils.utils import get_current_date_str, get_prev_day, get_next_day, get_current_date, round_precise
 
 
 def download_stock_data(stock_name: str, start_date: str = get_current_date_str(), end_date=get_next_day(1)) -> DataFrame:

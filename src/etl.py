@@ -7,13 +7,13 @@ from typing import List
 
 from tqdm import tqdm
 
-from optimization_job_repo import OptimizationRepository
+from repository.optimization_job_repo import OptimizationRepository
 from services.analyze import construct_result, print_result
-from data import StockOptimizationJob, OptimizationJobStatus, StockLimit, PriceData
+from data.data import StockOptimizationJob, OptimizationJobStatus, StockLimit, PriceData
 from services.stock_data_downloader import construct_price_data, download_current_price
 from services.stock_limit_transformer import transform_stock_limit
-from services.stock_optimize import optimize
-from utils import get_prev_day, OnlyPutBlockingQueue, round_precise, get_current_date_str
+from adapter.out.optimization.stock_optimize import optimize
+from utils.utils import get_prev_day, OnlyPutBlockingQueue, round_precise, get_current_date_str
 
 
 def get_sp500_stocks():

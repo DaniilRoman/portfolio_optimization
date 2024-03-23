@@ -1,5 +1,5 @@
-from data import StockOptimizationJob, StockLimitType
-from optimization_job_repo import OptimizationRepository
+from data.data import StockOptimizationJob, StockLimitType
+from repository.optimization_job_repo import OptimizationRepository
 
 
 def transform_stock_limit(job: StockOptimizationJob, repo: OptimizationRepository):

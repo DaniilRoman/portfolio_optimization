@@ -2,7 +2,7 @@ from typing import Optional
 
 from pymongo import MongoClient
 
-from data import StockOptimizationJob, OptimizationResult
+from data.data import StockOptimizationJob, OptimizationResult
 
 
 class OptimizationRepository:
