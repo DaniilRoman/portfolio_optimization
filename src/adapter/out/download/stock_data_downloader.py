@@ -5,7 +5,7 @@ import urllib
 
 from data.data import PriceData
 from repository.optimization_job_repo import OptimizationRepository
-from services.stock_predict import predict_value
+from adapter.out.forecast.forecaster import predict_value
 from utils.utils import get_current_date_str, get_prev_day, get_next_day, get_current_date, round_precise
 
 
@@ -55,8 +55,7 @@ def get_predict_value(stock_name: str, repo: OptimizationRepository,
     return res
 
 
-def construct_price_data(stock_name: str, predict_period: int, repo: OptimizationRepository,
-                         is_backtest: bool = False, current_date: str = get_current_date_str()) -> PriceData:
+def construct_price_data(stock_name: str, predict_period: int, current_date: str = get_current_date_str()) -> PriceData:
     if is_backtest:
         future_date = current_date
         current_date = get_prev_day(predict_period)

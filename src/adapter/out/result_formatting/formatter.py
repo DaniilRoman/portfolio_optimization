@@ -1,6 +1,6 @@
 import pandas as pd
 
-from data.data import StockOptimizationJob, OptimizationResult
+from logic.data.data import StockOptimizationJob, OptimizationResult
 from utils.utils import round_precise
 
 

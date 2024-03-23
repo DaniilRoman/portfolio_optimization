@@ -1,4 +1,5 @@
 import threading
+import pandas as pd
 from datetime import datetime, timedelta
 
 round_precise = 5
@@ -54,3 +55,17 @@ class OnlyPutBlockingQueue(object):
         with self.cv:
             self.queue[key] = value
             self.cv.notify()
+
+def get_sp500_stocks():
+    # There are 2 tables on the Wikipedia page
+    # we want the first table
+
+    payload = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+    first_table = payload[0]
+    second_table = payload[1]
+
+    df = first_table
+
+    symbols = df['Symbol'].values.tolist()
+    excluded_stocks = ["BRK.B", "BF.B", "MMM", "AES", "AFL", "A", "ABT", "ADBE"]
+    return list(filter(lambda s: s not in excluded_stocks, symbols))
