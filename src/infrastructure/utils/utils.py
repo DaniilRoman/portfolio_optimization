@@ -10,24 +10,22 @@ def current_date_str():
 
 
 def current_date():
-    # return datetime.date(datetime.now())
-    return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
+    return datetime.date(datetime.now())
+
+
+def __start_date(start_day: str):
+    if start_day is None:
+        return current_date()
+    else:
+        return datetime.strptime(start_day, "%Y-%m-%d").date()
 
 
 def next_day(days, start_day: str = None):
-    if start_day is None:
-        date = current_date()
-    else:
-        date = datetime.strptime(start_day, "%Y-%m-%d").date()
-    return str(date + timedelta(days=days))
+    return str(__start_date(start_day) + timedelta(days=days))
 
 
 def prev_day(days, start_day: str = None):
-    if start_day is None:
-        date = current_date()
-    else:
-        date = datetime.strptime(start_day, "%Y-%m-%d").date()
-    return str(date - timedelta(days=days))
+    return str(__start_date(start_day) - timedelta(days=days))
 
 
 class OnlyPutBlockingQueue(object):
