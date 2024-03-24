@@ -20,26 +20,26 @@ def print_step_stats(pop):
     print("  Std %s" % std)
 
 
-def get_current_date_str():
-    return str(get_current_date())
+def current_date_str():
+    return str(current_date())
 
 
-def get_current_date():
+def current_date():
     # return datetime.date(datetime.now())
     return datetime.strptime("2021-06-01", "%Y-%m-%d").date()
 
 
-def get_next_day(days, start_day: str = None):
+def next_day(days, start_day: str = None):
     if start_day is None:
-        date = get_current_date()
+        date = current_date()
     else:
         date = datetime.strptime(start_day, "%Y-%m-%d").date()
     return str(date + timedelta(days=days))
 
 
-def get_prev_day(days, start_day: str = None):
+def prev_day(days, start_day: str = None):
     if start_day is None:
-        date = get_current_date()
+        date = current_date()
     else:
         date = datetime.strptime(start_day, "%Y-%m-%d").date()
     return str(date - timedelta(days=days))
@@ -56,7 +56,7 @@ class OnlyPutBlockingQueue(object):
             self.queue[key] = value
             self.cv.notify()
 
-def get_sp500_stocks():
+def sp500_stocks():
     # There are 2 tables on the Wikipedia page
     # we want the first table
 
