@@ -5,21 +5,6 @@ from datetime import datetime, timedelta
 round_precise = 5
 
 
-def print_step_stats(pop):
-    # Gather all the fitnesses in one list and print the stats
-    fits = [ind.fitness.values[0] for ind in pop]
-
-    length = len(pop)
-    mean = sum(fits) / length
-    sum2 = sum(x * x for x in fits)
-    std = abs(sum2 / length - mean ** 2) ** 0.5
-
-    print("  Min %s" % min(fits))
-    print("  Max %s" % max(fits))
-    print("  Avg %s" % mean)
-    print("  Std %s" % std)
-
-
 def current_date_str():
     return str(current_date())
 
@@ -55,6 +40,20 @@ class OnlyPutBlockingQueue(object):
         with self.cv:
             self.queue[key] = value
             self.cv.notify()
+
+def print_step_stats(pop):
+    # Gather all the fitnesses in one list and print the stats
+    fits = [ind.fitness.values[0] for ind in pop]
+
+    length = len(pop)
+    mean = sum(fits) / length
+    sum2 = sum(x * x for x in fits)
+    std = abs(sum2 / length - mean ** 2) ** 0.5
+
+    print("  Min %s" % min(fits))
+    print("  Max %s" % max(fits))
+    print("  Avg %s" % mean)
+    print("  Std %s" % std)
 
 def sp500_stocks():
     # There are 2 tables on the Wikipedia page
