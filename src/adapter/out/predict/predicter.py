@@ -1,10 +1,10 @@
 from pandas import DataFrame
 from prophet import Prophet
 
-from infrastructure.utils import utils
+from src.infrastructure.utils import utils
 
 
-def predict_value(data: DataFrame, predict_period: int = 30) -> float:
+def predict(data: DataFrame, predict_period: int = 30) -> float:
     prophet = Prophet(daily_seasonality=True)
     prophet.fit(data)
 

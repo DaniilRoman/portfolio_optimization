@@ -1,5 +1,4 @@
-def __test_func():
-    return "fuuuuuu"
+from src.logic import stock_finder
 
-print(__test_func())
-
+if __name__ == '__main__':
+    stock_finder.run()

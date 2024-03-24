@@ -3,8 +3,8 @@ from pandas import DataFrame
 import json
 import urllib
 
-from adapter.out.predict import predicter
-from utils.utils import get_current_date_str, get_next_day
+from src.adapter.out.predict import predicter
+from src.infrastructure.utils import utils
 
 
 def __search_stocks(stock_name_query):
@@ -12,7 +12,11 @@ def __search_stocks(stock_name_query):
     content = response.read()
     return [i['symbol'] for i in json.loads(content.decode('utf8'))['quotes']]
 
-def download_stock_data(stock_name: str, start_date: str = get_current_date_str(), end_date=get_next_day(1)) -> DataFrame:
+def download_stock_data(
+        stock_name: str, 
+        start_date: str = utils.current_date_str(), 
+        end_date=utils.next_day(1)
+        ) -> DataFrame:
     stock = yf.Ticker(stock_name)
 
     hist = stock.history(start=start_date, end=end_date)
