@@ -1,8 +1,8 @@
-name: build on push to the main branch
+name: build on push to the master branch
 on:
   push:
     branches:
-      - main
+      - master
 jobs:
   build:
     name: install

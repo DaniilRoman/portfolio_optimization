@@ -87,6 +87,7 @@ files = [
 
 [package.dependencies]
 aiosignal = ">=1.1.2"
+async-timeout = {version = ">=4.0,<5.0", markers = "python_version < \"3.11\""}
 attrs = ">=17.3.0"
 frozenlist = ">=1.1.1"
 multidict = ">=4.5,<7.0"
@@ -118,6 +119,17 @@ python-versions = "*"
 files = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
     {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
+]
+
+[[package]]
+name = "async-timeout"
+version = "4.0.3"
+description = "Timeout context manager for asyncio programs"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
+    {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
 ]
 
 [[package]]
@@ -272,25 +284,25 @@ files = [
 
 [[package]]
 name = "cmdstanpy"
-version = "1.2.1"
+version = "1.2.2"
 description = "Python interface to CmdStan"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "cmdstanpy-1.2.1-py3-none-any.whl", hash = "sha256:950b31d0e5ca80c118ced24e5cebf18841eee9c553a6184e9a96fde4d536da10"},
-    {file = "cmdstanpy-1.2.1.tar.gz", hash = "sha256:09de766c3937d1db213f83c85722d6273aecf7f7c30a17d7c14835168892cb9a"},
+    {file = "cmdstanpy-1.2.2-py3-none-any.whl", hash = "sha256:b18cf61f9cae6babf4b26ab06a2c3572a64fc7781017ededdfa073430f8e29eb"},
+    {file = "cmdstanpy-1.2.2.tar.gz", hash = "sha256:09bcadd54a582090d722ba3e76d516db696275ab861ef71805195d0df2dd34a9"},
 ]
 
 [package.dependencies]
 numpy = ">=1.21"
 pandas = "*"
-stanio = ">=0.3.0,<0.4.0"
+stanio = ">=0.4.0,<2.0.0"
 tqdm = "*"
 
 [package.extras]
 all = ["xarray"]
-docs = ["matplotlib", "numpydoc", "sphinx", "sphinx-gallery", "sphinx-rtd-theme"]
-tests = ["flake8", "mypy", "pylint", "pytest", "pytest-cov", "pytest-order", "tqdm", "xarray"]
+docs = ["ipykernel", "ipython", "ipywidgets", "matplotlib", "nbsphinx", "pydata-sphinx-theme (<0.9)", "sphinx (>5,<6)", "sphinx-copybutton", "xarray"]
+test = ["flake8", "mypy", "pylint", "pytest", "pytest-cov", "pytest-order", "xarray"]
 
 [[package]]
 name = "colorama"
@@ -1097,7 +1109,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.26.0,<2", markers = "python_version >= \"3.12\""}
+numpy = {version = ">=1.22.4,<2", markers = "python_version < \"3.11\""}
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
 tzdata = ">=2022.7"
@@ -1345,13 +1357,13 @@ files = [
 
 [[package]]
 name = "stanio"
-version = "0.3.0"
-description = ""
+version = "0.5.0"
+description = "Utilities for preparing Stan inputs and processing Stan outputs"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "stanio-0.3.0-py3-none-any.whl", hash = "sha256:2d34b5ebe9ad8fcd137437209bf4b53846d88dbe933441aca5d83fd32f9b0c7e"},
-    {file = "stanio-0.3.0.tar.gz", hash = "sha256:0c504ae671b8d526a1da71185ac02a2775508ffe6d3db91f242eac85bcf6046f"},
+    {file = "stanio-0.5.0-py3-none-any.whl", hash = "sha256:412f8ede127968be51e074be6a6ca1e66d5a8ed50805e2fed89b76868e7332ae"},
+    {file = "stanio-0.5.0.tar.gz", hash = "sha256:dee429314d965f390181afa8ff7ff8144446eeb58cc2547ccc108ba73e6744e2"},
 ]
 
 [package.dependencies]
@@ -1359,6 +1371,7 @@ numpy = "*"
 
 [package.extras]
 test = ["pandas", "pytest", "pytest-cov"]
+ujson = ["ujson (>=5.5.0)"]
 
 [[package]]
 name = "telepot"
@@ -1566,5 +1579,5 @@ repair = ["scipy (>=1.6.3)"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.12"
-content-hash = "93be6346f9299dc71f066c40da3cbed1348ff2783ffc6eec59ed16b2943ba002"
+python-versions = "3.10.12"
+content-hash = "d0c19f33f5e634623b4d18815e32b968a2f8e0d889d79765d32a6db69efea42d"
