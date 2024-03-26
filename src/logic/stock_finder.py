@@ -2,6 +2,7 @@ import logging
 import pandas as pd
 import os
 
+from src.adapter.out.stock_pick import stock_picker
 from src.adapter.out.download import downloader
 from src.adapter.out.predict import predicter
 from src.adapter.out.notify import notifier
@@ -33,11 +34,12 @@ def __last_price(one_stock_data, column: str) -> float:
 def __clean_artifacts(analyses_result: StockData):
     os.remove(analyses_result.file_name)
 
-def run(stock_name: str):
+def run():
+    stock_name = stock_picker.pick()
     logging.info(f"Started an analyses of `{stock_name}`")
 
-    historic_prices = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365))
-    prophet, predicted_prices = predicter.predict(historic_prices, predict_period=30)
+    historic_prices = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*2))
+    prophet, predicted_prices = predicter.predict(historic_prices, predict_period=90)
 
     analyses_result = __analyses(stock_name, prophet, historic_prices, predicted_prices)
     print(analyses_result)

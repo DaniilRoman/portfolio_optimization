@@ -1,0 +1,28 @@
+name: build on push to the main branch
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    name: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v3
+
+      - name: Cache Poetry
+        uses: actions/cache@v3
+        with:
+          path: ~/.local/bin/poetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install Poetry
+        if: steps.cache_poetry.outputs == ''
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Install deps
+        run: poetry install

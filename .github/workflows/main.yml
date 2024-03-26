@@ -47,4 +47,5 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_TO: ${{ secrets.TELEGRAM_TO }}
+          GET_AND_INCREMENT_COUNTER_URL: ${{ secrets.GET_AND_INCREMENT_COUNTER_URL }}
           
