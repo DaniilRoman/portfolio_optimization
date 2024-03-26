@@ -2,7 +2,7 @@ name: Execute price prediction
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '* * * * *'
 permissions:
   contents: read
   pages: write

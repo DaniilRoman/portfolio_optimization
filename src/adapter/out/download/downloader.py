@@ -3,7 +3,6 @@ from pandas import DataFrame
 import json
 import urllib
 
-from src.adapter.out.predict import predicter
 from src.infrastructure.utils import utils
 
 
