@@ -1,3 +1,2 @@
-# Portfolio optimization strategy based on price prediction and optimization methods 
+# Finding promising stocks 
 - prediction - prophet
-- optimization - genetic algorithms
