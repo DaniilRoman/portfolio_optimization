@@ -15,21 +15,19 @@ import matplotlib.pyplot as plt
 def __analyses(stock_name: str, prophet: Prophet, historic_prices: pd.DataFrame, predicted_prices: pd.DataFrame):
     current_price = __last_price(historic_prices, "y")
     last_predicted_price = __last_price(predicted_prices, "yhat")
-    if last_predicted_price <= current_price:
-        print("Nope")
-        return None
-    else:
-        prophet.plot(predicted_prices)
-        file_name = f'{stock_name}.png'
-        plt.savefig(file_name)
-        return StockData(
-            stock_name=stock_name, 
-            current_price=current_price, 
-            predict_price=last_predicted_price,
-            file_name=file_name)
+    # if last_predicted_price <= current_price:
+    prophet.plot(predicted_prices)
+    file_name = f'{stock_name}.png'
+    plt.savefig(file_name)
+    return StockData(
+        stock_name=stock_name, 
+        current_price=current_price, 
+        predict_price=last_predicted_price,
+        file_name=file_name)
+    
 
 def __last_price(one_stock_data, column: str) -> float:
-    return round(one_stock_data.tail(1)[column].iloc[0], 5) # TODO make rounding based on value
+    return round(one_stock_data.tail(1)[column].iloc[0], 2) # TODO make rounding based on value
 
 def __clean_artifacts(analyses_result: StockData):
     os.remove(analyses_result.file_name)

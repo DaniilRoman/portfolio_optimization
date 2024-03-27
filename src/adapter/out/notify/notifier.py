@@ -13,4 +13,7 @@ def notify(result: StockData):
 
 
 def __to_msg(result: StockData) -> str:
-    return f'{result.stock_name} from {result.current_price} to {result.predict_price}'
+    if result.predict_price <= result.current_price:
+        return f'--- Filtered out {result.stock_name} from {result.current_price} to {result.predict_price}'
+    else: 
+        return f'{result.stock_name} from {result.current_price} to {result.predict_price}'
