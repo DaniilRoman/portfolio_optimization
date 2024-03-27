@@ -22,6 +22,7 @@ def __analyses(ticker_symbol: str, prophet: Prophet, stock_info: StockInfo, pred
     return StockData(
         ticker_symbol=ticker_symbol, 
         stock_name=stock_info.ticker.info['shortName'],
+        currency=stock_info.ticker.basic_info['currency'],
         current_price=current_price, 
         predict_price=last_predicted_price,
         file_name=file_name)
