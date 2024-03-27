@@ -13,7 +13,8 @@ def notify(result: StockData):
 
 
 def __to_msg(result: StockData) -> str:
+    stock_name_md_link = f'[{result.stock_name}](https://finance.yahoo.com/quote/{result.stock_name})'
     if result.predict_price <= result.current_price:
-        return f'--- Filtered out {result.stock_name} from {result.current_price} to {result.predict_price}'
+        return f'--- Filtered out {stock_name_md_link} from {result.current_price} to {result.predict_price}'
     else: 
-        return f'{result.stock_name} from {result.current_price} to {result.predict_price}'
+        return f'{stock_name_md_link} from {result.current_price} to {result.predict_price}'
