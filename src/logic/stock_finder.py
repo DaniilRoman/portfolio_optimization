@@ -17,11 +17,11 @@ def __analyses(ticker_symbol: str, prophet: Prophet, stock_info: StockInfo, pred
     last_predicted_price = __last_price(predicted_prices, "yhat")
     # if last_predicted_price <= current_price:
     prophet.plot(predicted_prices)
-    file_name = f'{stock_name}.png'
+    file_name = f'{ticker_symbol}.png'
     plt.savefig(file_name)
     return StockData(
         ticker_symbol=ticker_symbol, 
-        stock_name=stock_info.info['shortName'],
+        stock_name=stock_info.ticker.info['shortName'],
         current_price=current_price, 
         predict_price=last_predicted_price,
         file_name=file_name)
@@ -42,7 +42,5 @@ def run(stock_name = None):
     prophet, predicted_prices = predicter.predict(stock_info.historic_data, predict_period=90)
 
     analyses_result = __analyses(stock_name, prophet, stock_info, predicted_prices)
-    print(analyses_result)
-    if analyses_result != None:
-        notifier.notify(analyses_result)
-        __clean_artifacts(analyses_result)
+    notifier.notify(analyses_result)
+    __clean_artifacts(analyses_result)

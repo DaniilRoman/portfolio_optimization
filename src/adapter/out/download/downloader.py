@@ -22,4 +22,6 @@ def download_stock_data(
     hist = stock.history(start=start_date, end=end_date)
     data = hist["Close"].to_frame("y")
     data["ds"] = data.index.date
-    return StockInfo(stock, data)
+    return StockInfo(
+        historic_data=data, 
+        ticker=stock)
