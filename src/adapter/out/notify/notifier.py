@@ -8,8 +8,7 @@ def notify(result: StockData):
 
     bot = telepot.Bot(configuration.TELEGRAM_TOKEN)
     bot.getMe()
-    bot.sendMessage(configuration.TELEGRAM_TO, msg_to_send, parse_mode='Markdown')
-    bot.sendPhoto(configuration.TELEGRAM_TO, photo=photo_to_send)
+    bot.sendPhoto(configuration.TELEGRAM_TO, caption=msg_to_send, parse_mode='Markdown', photo=photo_to_send)
 
 
 def __to_msg(result: StockData) -> str:

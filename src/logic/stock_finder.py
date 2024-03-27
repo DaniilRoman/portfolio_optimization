@@ -32,8 +32,9 @@ def __last_price(one_stock_data, column: str) -> float:
 def __clean_artifacts(analyses_result: StockData):
     os.remove(analyses_result.file_name)
 
-def run():
-    stock_name = stock_picker.pick()
+def run(stock_name = None):
+    if stock_name is None:
+        stock_name = stock_picker.pick()
     logging.info(f"Started an analyses of `{stock_name}`")
 
     historic_prices = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*2))
