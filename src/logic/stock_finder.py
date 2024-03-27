@@ -7,20 +7,21 @@ from src.adapter.out.download import downloader
 from src.adapter.out.predict import predicter
 from src.adapter.out.notify import notifier
 from src.infrastructure.utils import utils
-from src.logic.data.data import StockData
+from src.logic.data.data import StockData, StockInfo
 
 from prophet import Prophet
 import matplotlib.pyplot as plt
 
-def __analyses(stock_name: str, prophet: Prophet, historic_prices: pd.DataFrame, predicted_prices: pd.DataFrame):
-    current_price = __last_price(historic_prices, "y")
+def __analyses(ticker_symbol: str, prophet: Prophet, stock_info: StockInfo, predicted_prices: pd.DataFrame):
+    current_price = __last_price(stock_info.historic_data, "y")
     last_predicted_price = __last_price(predicted_prices, "yhat")
     # if last_predicted_price <= current_price:
     prophet.plot(predicted_prices)
     file_name = f'{stock_name}.png'
     plt.savefig(file_name)
     return StockData(
-        stock_name=stock_name, 
+        ticker_symbol=ticker_symbol, 
+        stock_name=stock_info.info['shortName'],
         current_price=current_price, 
         predict_price=last_predicted_price,
         file_name=file_name)
@@ -37,10 +38,10 @@ def run(stock_name = None):
         stock_name = stock_picker.pick()
     logging.info(f"Started an analyses of `{stock_name}`")
 
-    historic_prices = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*2))
-    prophet, predicted_prices = predicter.predict(historic_prices, predict_period=90)
+    stock_info = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*2))
+    prophet, predicted_prices = predicter.predict(stock_info.historic_data, predict_period=90)
 
-    analyses_result = __analyses(stock_name, prophet, historic_prices, predicted_prices)
+    analyses_result = __analyses(stock_name, prophet, stock_info, predicted_prices)
     print(analyses_result)
     if analyses_result != None:
         notifier.notify(analyses_result)
