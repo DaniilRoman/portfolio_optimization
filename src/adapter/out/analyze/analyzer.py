@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.logic.data.data import StockData, StockInfo
+from src.logic.data.data import StockData, StockInfo, ProfitabilityData
 
 from prophet import Prophet
 import matplotlib.pyplot as plt
@@ -12,6 +12,13 @@ def analyses(ticker_symbol: str, prophet: Prophet, stock_info: StockInfo, predic
     prophet.plot(predicted_prices)
     file_name = f'{ticker_symbol}.png'
     plt.savefig(file_name)
+    profitability_data = ProfitabilityData(
+        ebitda_margins=stock_info.ticker.info['ebitdaMargins'],
+        forward_eps=stock_info.ticker.info['forwardEps'],
+        netIncome_to_common=stock_info.ticker.info['netIncomeToCommon'],
+        operating_margins=stock_info.ticker.info['operatingMargins'],
+        trailing_eps=stock_info.ticker.info['trailingEps']
+    )
     return StockData(
         ticker_symbol=ticker_symbol, 
         stock_name=stock_info.ticker.info['shortName'],
@@ -20,7 +27,8 @@ def analyses(ticker_symbol: str, prophet: Prophet, stock_info: StockInfo, predic
         predict_price=last_predicted_price,
         file_name=file_name,
         is_stock_growing=is_stock_growing,
-        industry=stock_info.ticker.info['industry']
+        industry=stock_info.ticker.info['industry'],
+        profitability_data=profitability_data
     )
     
 def __is_stock_growing(current_price, last_predicted_price) -> bool:
