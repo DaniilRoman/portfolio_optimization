@@ -3,6 +3,8 @@ import configuration
 from src.logic.data.data import StockData
 
 def notify(result: StockData):
+    if not result.is_stock_growing:
+        return
     msg_to_send = __to_msg(result)
     photo_to_send = open(result.file_name, 'rb')
 
@@ -13,8 +15,4 @@ def notify(result: StockData):
 
 def __to_msg(result: StockData) -> str:
     stock_name_md_link = f'[{result.ticker_symbol}](https://finance.yahoo.com/quote/{result.ticker_symbol})'
-    common_msg = f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n{result.stock_name}'
-    if result.predict_price <= result.current_price:
-        return f'--- Filtered out {common_msg}'
-    else: 
-        return common_msg
+    return f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n{result.stock_name}'
