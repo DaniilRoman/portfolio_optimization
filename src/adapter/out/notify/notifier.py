@@ -15,19 +15,19 @@ def notify(result: StockData):
 def __profitability_data(profitability_data: ProfitabilityData) -> str:
     res = "\n"
     if profitability_data.ebitda_margins < 0:
-        res += f"ebitda_margins: {profitability_data.ebitda_margins}\n"
+        res += f"Ebitda margins: {profitability_data.ebitda_margins}\n"
     if profitability_data.operating_margins < 0:
-        res += f"operating_margins: {profitability_data.operating_margins}\n"
+        res += f"Operating margins: {profitability_data.operating_margins}\n"
     if profitability_data.forward_eps < 0:
-        res += f"forward_eps: {profitability_data.forward_eps}\n"
+        res += f"Forward EpS: {profitability_data.forward_eps}\n"
     if profitability_data.trailing_eps < 0:
-        res += f"trailing_eps: {profitability_data.ebitda_margins}\n"
+        res += f"Trailing EpS: {profitability_data.ebitda_margins}\n"
     if profitability_data.netIncome_to_common < 0:
-        res += f"netIncome_to_common: {profitability_data.netIncome_to_common}\n"
+        res += f"Net income to common: {profitability_data.netIncome_to_common}\n"
     if res == "\n":
         return ""
     else:
-        return res
+        return res[:-2]
 
 def __to_msg(result: StockData) -> str:
     stock_name_md_link = f'[{result.ticker_symbol}](https://finance.yahoo.com/quote/{result.ticker_symbol})'
