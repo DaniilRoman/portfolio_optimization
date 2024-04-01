@@ -19,7 +19,9 @@ def analyses(ticker_symbol: str, prophet: Prophet, stock_info: StockInfo, predic
         current_price=current_price, 
         predict_price=last_predicted_price,
         file_name=file_name,
-        is_stock_growing=is_stock_growing)
+        is_stock_growing=is_stock_growing,
+        industry=stock_info.ticker.info['industry']
+    )
     
 def __is_stock_growing(current_price, last_predicted_price) -> bool:
     return current_price <= last_predicted_price

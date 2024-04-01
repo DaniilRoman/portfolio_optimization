@@ -10,6 +10,7 @@ class StockData:
     predict_price: float
     file_name: str
     is_stock_growing: bool
+    industry: str
 
 @dataclass
 class StockInfo:

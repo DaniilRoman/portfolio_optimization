@@ -15,4 +15,4 @@ def notify(result: StockData):
 
 def __to_msg(result: StockData) -> str:
     stock_name_md_link = f'[{result.ticker_symbol}](https://finance.yahoo.com/quote/{result.ticker_symbol})'
-    return f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n{result.stock_name}'
+    return f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n{result.stock_name}\n{result.industry}'
