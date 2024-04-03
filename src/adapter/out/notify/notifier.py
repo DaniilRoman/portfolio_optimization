@@ -40,4 +40,4 @@ def __to_msg(result: StockData) -> str:
     stock_name_md_link = f'[{result.ticker_symbol}](https://finance.yahoo.com/quote/{result.ticker_symbol})'
     profitability = __profitability_data(result.profitability_data)
     industry = f'__{result.industry}__'
-    return f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n{result.stock_name}\n{industry}{profitability}'
+    return f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n{result.stock_name}\n\n{industry}{profitability}'
