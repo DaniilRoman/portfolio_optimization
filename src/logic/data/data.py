@@ -9,6 +9,9 @@ class ProfitabilityData:
     ebitda_margins: float
     operating_margins: float
 
+    def is_profitable(self) -> bool:
+        return self.trailing_eps > 0 and self.forward_eps > 0 and self.netIncome_to_common > 0 and self.ebitda_margins > 0 and self.operating_margins > 0
+
 @dataclass
 class StockData:
     ticker_symbol: str

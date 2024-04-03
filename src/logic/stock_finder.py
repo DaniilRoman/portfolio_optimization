@@ -7,6 +7,7 @@ from src.adapter.out.download import downloader
 from src.adapter.out.predict import predicter
 from src.adapter.out.notify import notifier
 from src.adapter.out.analyze import analyzer
+from src.adapter.out.stats import stats_calculator
 from src.infrastructure.utils import utils
 from src.logic.data.data import StockData
 
@@ -39,4 +40,5 @@ def run(stock_name = None):
                                         five_year_prophet=five_year_prophet, 
                                         five_year_predicted_prices=five_year_predicted_prices)
     notifier.notify(analyses_result)
+    stats_calculator.calculate(analyses_result)
     __clean_artifacts(analyses_result)
