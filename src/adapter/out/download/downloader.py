@@ -5,6 +5,7 @@ import urllib
 
 from src.infrastructure.utils import utils
 from src.logic.data.data import StockInfo
+from src.logic.data import data
 
 
 def __search_stocks(stock_name_query):
@@ -20,6 +21,9 @@ def download_stock_data(
     stock = yf.Ticker(stock_name)
 
     hist = stock.history(start=start_date, end=end_date)
+    if hist.empty:
+        raise data.SkipException(f'History data is empty for a stock: {stock_name}')
+    
     data = hist["Close"].to_frame("y")
     data["ds"] = data.index.date
     return StockInfo(

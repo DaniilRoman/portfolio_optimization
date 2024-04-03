@@ -30,3 +30,6 @@ class StockData:
 class StockInfo:
     historic_data: pd.DataFrame
     ticker: any
+
+class SkipException(Exception):
+    pass
