@@ -3,7 +3,7 @@ import configuration
 from src.logic.data.data import StockData, ProfitabilityData
 
 def notify(result: StockData):
-    if not result.is_stock_growing:
+    if not result.is_stock_growing or not result.profitability_data.is_profitable():
         return
     msg_to_send = __to_msg(result)
     first_photo_to_send = open(result.two_year_file_name, 'rb')
