@@ -16,7 +16,8 @@ class StockData:
     currency: str
     current_price: float
     predict_price: float
-    file_name: str
+    two_year_file_name: str
+    five_year_file_name: str
     is_stock_growing: bool
     industry: str
     profitability_data: ProfitabilityData
