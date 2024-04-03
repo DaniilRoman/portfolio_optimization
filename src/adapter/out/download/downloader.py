@@ -1,5 +1,4 @@
 import yfinance as yf
-from pandas import DataFrame
 import json
 import urllib
 
@@ -24,8 +23,8 @@ def download_stock_data(
     if hist.empty:
         raise data.SkipException(f'History data is empty for a stock: {stock_name}')
     
-    data = hist["Close"].to_frame("y")
-    data["ds"] = data.index.date
+    historic_data = hist["Close"].to_frame("y")
+    historic_data["ds"] = historic_data.index.date
     return StockInfo(
-        historic_data=data, 
+        historic_data=historic_data, 
         ticker=stock)
