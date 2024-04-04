@@ -18,14 +18,6 @@ jobs:
       - name: Check out this repository
         uses: actions/checkout@v3
 
-      # - name: Set up Python
-      #   uses: actions/setup-python@v2
-      #   with:
-      #     python-version: '3.8'
-
-      # - name: Install pipenv
-      #   run: pip install poetry
-
       - name: Cache Poetry
         uses: actions/cache@v3
         with:
