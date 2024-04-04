@@ -12,16 +12,6 @@ from src.infrastructure.utils import utils
 from src.logic.data.data import StockData
 
 
-def __clean_artifacts(analyses_result: StockData):
-    os.remove(analyses_result.two_year_file_name)
-    os.remove(analyses_result.five_year_file_name)
-
-def __slice(historic_data, prev_date) -> any:
-    today = historic_data.iloc[-1].name  # Get the latest date in the data
-    two_years_ago = today - pd.Timedelta(days=prev_date)  # Calculate date 2 years ago
-    data_2y = historic_data.loc[two_years_ago:today]
-    return data_2y
-
 def run(stock_name = None):
     if stock_name is None:
         stock_name = stock_picker.pick()
@@ -42,3 +32,16 @@ def run(stock_name = None):
     notifier.notify(analyses_result)
     stats_calculator.calculate(analyses_result)
     __clean_artifacts(analyses_result)
+
+
+def __slice(historic_data, prev_date) -> any:
+    today = historic_data.iloc[-1].name  # Get the latest date in the data
+    two_years_ago = today - pd.Timedelta(days=prev_date)  # Calculate date 2 years ago
+    data_2y = historic_data.loc[two_years_ago:today]
+    return data_2y
+
+
+def __clean_artifacts(analyses_result: StockData):
+    os.remove(analyses_result.two_year_file_name)
+    os.remove(analyses_result.five_year_file_name)
+
