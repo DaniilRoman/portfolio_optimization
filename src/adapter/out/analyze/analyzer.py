@@ -41,7 +41,10 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     
 def __is_stock_growing(current_price: float, last_predicted_price: float, historic_data: pd.DataFrame) -> bool:
     month_2_years_ago = __slice(historic_data, 365 * 2, 30)
-    return current_price <= last_predicted_price and __is_stock_historicly_growing(current_price, month_2_years_ago)
+    month_5_years_ago = __slice(historic_data, 365 * 5, 30)
+    return current_price <= last_predicted_price \
+        and __is_stock_historicly_growing(current_price, month_2_years_ago) \
+            and __is_stock_historicly_growing(current_price, month_5_years_ago)
 
 def __is_stock_historicly_growing(current_price: float, history_slice: pd.DataFrame) -> bool:
     return any(val < current_price for val in history_slice["y"])
