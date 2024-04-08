@@ -20,11 +20,11 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     plt.savefig(five_year_file_name)
 
     profitability_data = ProfitabilityData(
-        ebitda_margins=stock_info.ticker.info['ebitdaMargins'],
-        forward_eps=stock_info.ticker.info['forwardEps'],
-        netIncome_to_common=stock_info.ticker.info['netIncomeToCommon'],
-        operating_margins=stock_info.ticker.info['operatingMargins'],
-        trailing_eps=stock_info.ticker.info['trailingEps']
+        ebitda_margins=stock_info.ticker.info.get('ebitdaMargins', 0),
+        forward_eps=stock_info.ticker.info.get('forwardEps', 0),
+        netIncome_to_common=stock_info.ticker.info.get('netIncomeToCommon', 0),
+        operating_margins=stock_info.ticker.info.get('operatingMargins', 0),
+        trailing_eps=stock_info.ticker.info.get('trailingEps', 0)
     )
 
     return StockData(
@@ -36,7 +36,7 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         two_year_file_name=two_year_file_name,
         five_year_file_name=five_year_file_name,
         is_stock_growing=is_stock_growing,
-        industry=stock_info.ticker.info['industry'],
+        industry=stock_info.ticker.info.get('industry'),
         profitability_data=profitability_data
     )
     
