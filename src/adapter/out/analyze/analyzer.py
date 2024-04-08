@@ -36,7 +36,7 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         two_year_file_name=two_year_file_name,
         five_year_file_name=five_year_file_name,
         is_stock_growing=is_stock_growing,
-        industry=stock_info.ticker.info.get('industry'),
+        industry=stock_info.ticker.info.get('industry', ""),
         profitability_data=profitability_data
     )
     
