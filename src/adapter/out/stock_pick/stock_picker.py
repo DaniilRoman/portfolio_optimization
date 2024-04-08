@@ -4,7 +4,7 @@ import stock_names
 
 def __calculate_index(current_counter: int) -> int:
     tmp_counter = current_counter
-    len_of_stocks = len(stock_names.sp500)
+    len_of_stocks = len(stock_names.ishares_etf_list)
     while tmp_counter >= len_of_stocks:
         tmp_counter = tmp_counter - len_of_stocks
     return tmp_counter
@@ -12,4 +12,4 @@ def __calculate_index(current_counter: int) -> int:
 def pick():
     current_counter = int(requests.get(configuration.GET_AND_INCREMENT_COUNTER_URL).content)
     stock_index = __calculate_index(current_counter)
-    return stock_names.sp500[stock_index]
+    return stock_names.ishares_etf_list[stock_index]
