@@ -10,6 +10,9 @@ class ProfitabilityData:
     operating_margins: float
 
     def is_profitable(self) -> bool:
+        # TODO tmp fix
+        if self.trailing_eps == 0 and self.forward_eps == 0 and self.netIncome_to_common == 0 and self.ebitda_margins == 0 and self.operating_margins == 0:
+            return True
         return self.trailing_eps > 0 and self.forward_eps > 0 and self.netIncome_to_common > 0 and self.ebitda_margins > 0 and self.operating_margins > 0
 
 @dataclass
