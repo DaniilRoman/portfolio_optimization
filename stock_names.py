@@ -1,3 +1,5 @@
+import de_etf_list
+
 sp500 = ['AOS', 'ABBV', 'ABMD', 'ACN', 'ATVI', 'ADM', 'ADP', 'AAP', 'AIG', 'APD', 'AKAM', 'ALK', 'ALB', 'ARE',
                    'ALGN', 'ALLE', 'LNT', 'ALL', 'GOOGL', 'GOOG', 'MO', 'AMZN', 'AMCR', 'AMD', 'AEE', 'AAL', 'AEP',
                    'AXP', 'AMT', 'AWK', 'AMP', 'ABC', 'AME', 'AMGN', 'APH', 'ADI', 'ANSS', 'ANTM', 'AON', 'APA', 'AAPL',
@@ -784,4 +786,5 @@ vanguard_etf_list = [
     "VTV"
 ]
 
-etf_list = ishares_etf_list + vanguard_etf_list
+# etf_list = ishares_etf_list + vanguard_etf_list
+etf_list = de_etf_list
