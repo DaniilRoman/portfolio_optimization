@@ -10,6 +10,11 @@ jobs:
     steps:
       - name: Check out this repository
         uses: actions/checkout@v3
+      
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12.7
 
       - name: Cache Poetry
         uses: actions/cache@v3
