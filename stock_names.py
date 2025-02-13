@@ -787,4 +787,4 @@ vanguard_etf_list = [
 ]
 
 # etf_list = ishares_etf_list + vanguard_etf_list
-etf_list = de_etf_list
+etf_list = de_etf_list.de_etfs
