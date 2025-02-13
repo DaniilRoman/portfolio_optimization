@@ -14,7 +14,9 @@ telepot = "^12.7"
 python-decouple = "^3.8"
 beautifulsoup4 = "^4.13.3"
 
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.packages]
+packages = [{ include = "src" }]
