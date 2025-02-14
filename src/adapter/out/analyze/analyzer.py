@@ -27,7 +27,7 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         trailing_eps=stock_info.ticker.info.get('trailingEps', 0)
     )
 
-    description = stock_info.ticker.info['longBusinessSummary']
+    description = stock_info.ticker.info.get('longBusinessSummary', '')
     return StockData(
         ticker_symbol=ticker_symbol, 
         stock_name=stock_info.ticker.info['longName'],
