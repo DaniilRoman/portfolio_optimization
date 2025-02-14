@@ -20,7 +20,7 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     plt.savefig(five_year_file_name)
 
     # Extract data from FundsData
-    funds_data = stock_info.ticker.funds_info
+    funds_data = stock_info.ticker.funds_data
     total_assets = getattr(funds_data, 'total_assets', 0)
     expense_ratio = getattr(funds_data, 'expense_ratio', 0)
     yield_ = getattr(funds_data, 'yield_', 0)
