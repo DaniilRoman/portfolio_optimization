@@ -28,7 +28,6 @@ class StockData:
     beta: float
     standard_deviation: float
     dividend_yield: float
-    dividend_frequency: str
     top_holdings: list
     sector_allocation: list
     average_daily_volume: float
