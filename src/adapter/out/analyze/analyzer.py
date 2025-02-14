@@ -19,6 +19,14 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     five_year_file_name = f'five_year_{ticker_symbol}.png'
     plt.savefig(five_year_file_name)
 
+    # Extract data from FundsData
+    funds_data = stock_info.ticker.funds
+    total_assets = getattr(funds_data, 'total_assets', 0)
+    expense_ratio = getattr(funds_data, 'expense_ratio', 0)
+    yield_ = getattr(funds_data, 'yield_', 0)
+    top_holdings = getattr(funds_data, 'top_holdings', [])
+    sector_allocation = getattr(funds_data, 'sector_allocation', [])
+
     profitability_data = ProfitabilityData(
         ebitda_margins=stock_info.ticker.info.get('ebitdaMargins', 0),
         forward_eps=stock_info.ticker.info.get('forwardEps', 0),
@@ -30,8 +38,8 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     description = stock_info.ticker.info.get('longBusinessSummary', '')
     return StockData(
         ticker_symbol=ticker_symbol, 
-        stock_name=stock_info.ticker.info['longName'],
-        currency=stock_info.ticker.basic_info['currency'],
+        stock_name=stock_info.ticker.info.get('longName', 'Unknown'),
+        currency=stock_info.ticker.info.get('currency', 'Unknown'),
         current_price=current_price, 
         predict_price=two_year_last_predicted_price,
         two_year_file_name=two_year_file_name,
@@ -42,13 +50,12 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         description=description,
         beta=stock_info.ticker.info.get('beta', 0),
         standard_deviation=stock_info.ticker.info.get('standardDeviation', 0),
-        dividend_yield=stock_info.ticker.info.get('dividendYield', 0),
-        dividend_frequency=stock_info.ticker.info.get('dividendFrequency', ""),
-        top_holdings=stock_info.ticker.info.get('topHoldings', []),
-        sector_allocation=stock_info.ticker.info.get('sectorAllocation', []),
+        dividend_yield=yield_,
+        top_holdings=top_holdings,
+        sector_allocation=sector_allocation,
         average_daily_volume=stock_info.ticker.info.get('averageDailyVolume', 0),
-        assets_under_management=stock_info.ticker.info.get('assetsUnderManagement', 0),
-        expense_ratio=stock_info.ticker.info.get('expenseRatio', 0)
+        assets_under_management=total_assets,
+        expense_ratio=expense_ratio
     )
 
 def __is_stock_growing(current_price: float, two_year_last_predicted_price: float, five_year_last_predicted_price: float, historic_data: pd.DataFrame) -> bool:
