@@ -25,6 +25,16 @@ class StockData:
     is_stock_growing: bool
     industry: str
     profitability_data: ProfitabilityData
+    beta: float
+    standard_deviation: float
+    dividend_yield: float
+    dividend_frequency: str
+    top_holdings: list
+    sector_allocation: list
+    average_daily_volume: float
+    assets_under_management: float
+    expense_ratio: float
+    description: str
 
 
 @dataclass
