@@ -32,21 +32,27 @@ def __sector_allocation_pretty_print(d: dict) -> str:
     if not d:
         return ""
     
+    # Sort the dictionary by value in descending order
+    sorted_items = sorted(d.items(), key=lambda item: item[1], reverse=True)
+    
     pretty_str = ""
-    for key, value in d.items():
+    for key, value in sorted_items:
         pretty_str += f"{key.capitalize()}: {value:.2%}\n"
     
-    return f'\n\nSector Allocation:\n{pretty_str.strip()}'
+    return f'\n\nSector Allocation:\n{pretty_str.strip()}\n'
 
 def __format_top_holdings(top_holdings: numpy.ndarray) -> str:
     if top_holdings.size == 0:
         return ""
     
+    # Sort the top_holdings array by the second value (weight)
+    sorted_top_holdings = top_holdings[top_holdings[:, 1].argsort()[::-1]]
+
     holdings_str = ""
-    for i, holding in enumerate(top_holdings, start=1):
+    for i, holding in enumerate(sorted_top_holdings, start=1):
         name = holding[0]
         weight = holding[1]
-        holdings_str += f"{name} - {weight}\n"
+        holdings_str += f"{name} - {weight:.3f}\n"
     
     return f'\nTop Holdings:\n{holdings_str.strip()}'
 
@@ -84,6 +90,8 @@ def __to_msg(result: StockData) -> str:
     return (
         f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n'
         f'{result.stock_name}\n\n'
+        f'{average_daily_volume}'
+        f'{description}'
         f'{__escape_markdown(__format_top_holdings(result.top_holdings))}'
         f'{__escape_markdown(__sector_allocation_pretty_print(result.sector_allocation))}'
         f'{industry}\n'
@@ -91,8 +99,6 @@ def __to_msg(result: StockData) -> str:
         f'{beta}'
         f'{standard_deviation}'
         f'{dividend_yield}'
-        f'{average_daily_volume}'
         f'{assets_under_management}'
         f'{expense_ratio}'
-        f'{description}'
     ).strip()

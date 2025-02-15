@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from dataclasses import dataclass
 
 @dataclass
@@ -28,8 +29,8 @@ class StockData:
     beta: float
     standard_deviation: float
     dividend_yield: float
-    top_holdings: list
-    sector_allocation: list
+    top_holdings: np.ndarray
+    sector_allocation: dict
     average_daily_volume: float
     assets_under_management: float
     expense_ratio: float
