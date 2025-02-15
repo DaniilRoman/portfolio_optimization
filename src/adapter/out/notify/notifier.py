@@ -1,4 +1,6 @@
 import telepot
+import re
+import numpy
 import configuration
 from src.logic.data.data import StockData, ProfitabilityData
 
@@ -18,6 +20,35 @@ def notify(result: StockData):
             {'media' : second_photo_to_send, 'type' : 'photo'}
         ]
     )
+
+def __escape_markdown(text: str) -> str:
+    """
+    Helper function to escape special characters in Markdown.
+    """
+    escape_chars = r'\*_`['
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
+
+def __sector_allocation_pretty_print(d: dict) -> str:
+    if not d:
+        return ""
+    
+    pretty_str = ""
+    for key, value in d.items():
+        pretty_str += f"{key.capitalize()}: {value:.2%}\n"
+    
+    return f'\n\nSector Allocation:\n{pretty_str.strip()}'
+
+def __format_top_holdings(top_holdings: numpy.ndarray) -> str:
+    if top_holdings.size == 0:
+        return ""
+    
+    holdings_str = ""
+    for i, holding in enumerate(top_holdings, start=1):
+        name = holding[0]
+        weight = holding[1]
+        holdings_str += f"{name} - {weight}\n"
+    
+    return f'\nTop Holdings:\n{holdings_str.strip()}'
 
 def __profitability_data(profitability_data: ProfitabilityData) -> str:
     res = "\n"
@@ -45,8 +76,6 @@ def __to_msg(result: StockData) -> str:
     beta = f'Beta: {result.beta}\n' if result.beta else ''
     standard_deviation = f'Standard Deviation: {result.standard_deviation}\n' if result.standard_deviation else ''
     dividend_yield = f'Dividend Yield: {result.dividend_yield}\n' if result.dividend_yield else ''
-    top_holdings = f'Top Holdings: {result.top_holdings}\n' if result.top_holdings else ''
-    sector_allocation = f'Sector Allocation: {result.sector_allocation}\n' if result.sector_allocation else ''
     average_daily_volume = f'Average Daily Volume: {result.average_daily_volume}\n' if result.average_daily_volume else ''
     assets_under_management = f'Assets Under Management: {result.assets_under_management}\n' if result.assets_under_management else ''
     expense_ratio = f'Expense Ratio: {result.expense_ratio}\n' if result.expense_ratio else ''
@@ -55,13 +84,13 @@ def __to_msg(result: StockData) -> str:
     return (
         f'{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n'
         f'{result.stock_name}\n\n'
+        f'{__escape_markdown(__format_top_holdings(result.top_holdings))}'
+        f'{__escape_markdown(__sector_allocation_pretty_print(result.sector_allocation))}'
         f'{industry}\n'
         f'{profitability}'
         f'{beta}'
         f'{standard_deviation}'
         f'{dividend_yield}'
-        f'{top_holdings}'
-        f'{sector_allocation}'
         f'{average_daily_volume}'
         f'{assets_under_management}'
         f'{expense_ratio}'

@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy
 
 from src.logic.data.data import StockData, StockInfo, ProfitabilityData
 
@@ -48,8 +47,8 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         profitability_data=profitability_data,
         average_daily_volume=stock_info.ticker.info.get('averageVolume', 0),
         description=description,
-        top_holdings=__format_top_holdings(funds_data.top_holdings.values),
-        sector_allocation=__pretty_print_dict(funds_data.sector_weightings),
+        top_holdings=funds_data.top_holdings.values,
+        sector_allocation=funds_data.sector_weightings,
         # New unverified fields
         beta=stock_info.ticker.info.get('beta', 0),
         standard_deviation=stock_info.ticker.info.get('standardDeviation', 0),
@@ -57,28 +56,6 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         assets_under_management=total_assets,
         expense_ratio=expense_ratio
     )
-
-def __pretty_print_dict(d) -> str:
-    if not d:
-        return ""
-    
-    pretty_str = ""
-    for key, value in d.items():
-        pretty_str += f"{key.capitalize()}: {value:.2%}\n"
-    
-    return pretty_str.strip()
-
-def __format_top_holdings(top_holdings: numpy.ndarray) -> str:
-    if top_holdings.size == 0:
-        return ""
-    
-    holdings_str = "Top Holdings:\n"
-    for i, holding in enumerate(top_holdings, start=1):
-        name = holding[0]
-        weight = holding[1]
-        holdings_str += f"{name} - {weight}\n"
-    
-    return holdings_str.strip()
 
 
 def __is_stock_growing(current_price: float, two_year_last_predicted_price: float, five_year_last_predicted_price: float, historic_data: pd.DataFrame) -> bool:
