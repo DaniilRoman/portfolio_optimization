@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy
 
 from src.logic.data.data import StockData, StockInfo, ProfitabilityData
 
@@ -24,8 +25,6 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     total_assets = getattr(funds_data, 'total_assets', 0)
     expense_ratio = getattr(funds_data, 'expense_ratio', 0)
     yield_ = getattr(funds_data, 'yield_', 0)
-    top_holdings = getattr(funds_data, 'top_holdings', [])
-    sector_allocation = getattr(funds_data, 'sector_allocation', [])
 
     profitability_data = ProfitabilityData(
         ebitda_margins=stock_info.ticker.info.get('ebitdaMargins', 0),
@@ -35,7 +34,7 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         trailing_eps=stock_info.ticker.info.get('trailingEps', 0)
     )
 
-    description = stock_info.ticker.info.get('longBusinessSummary', '')
+    description = f"{funds_data.fund_overview.get('family', '')} || {funds_data.fund_overview.get('legalType', '')} || {funds_data.description}"
     return StockData(
         ticker_symbol=ticker_symbol, 
         stock_name=stock_info.ticker.info.get('longName', 'Unknown'),
@@ -47,16 +46,40 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         is_stock_growing=is_stock_growing,
         industry=stock_info.ticker.info.get('industry', ""),
         profitability_data=profitability_data,
+        average_daily_volume=stock_info.ticker.info.get('averageVolume', 0),
         description=description,
+        top_holdings=__format_top_holdings(funds_data.top_holdings.values),
+        sector_allocation=__pretty_print_dict(funds_data.sector_weightings),
+        # New unverified fields
         beta=stock_info.ticker.info.get('beta', 0),
         standard_deviation=stock_info.ticker.info.get('standardDeviation', 0),
         dividend_yield=yield_,
-        top_holdings=top_holdings,
-        sector_allocation=sector_allocation,
-        average_daily_volume=stock_info.ticker.info.get('averageDailyVolume', 0),
         assets_under_management=total_assets,
         expense_ratio=expense_ratio
     )
+
+def __pretty_print_dict(d) -> str:
+    if not d:
+        return ""
+    
+    pretty_str = ""
+    for key, value in d.items():
+        pretty_str += f"{key.capitalize()}: {value:.2%}\n"
+    
+    return pretty_str.strip()
+
+def __format_top_holdings(top_holdings: numpy.ndarray) -> str:
+    if top_holdings.size == 0:
+        return ""
+    
+    holdings_str = "Top Holdings:\n"
+    for i, holding in enumerate(top_holdings, start=1):
+        name = holding[0]
+        weight = holding[1]
+        holdings_str += f"{name} - {weight}\n"
+    
+    return holdings_str.strip()
+
 
 def __is_stock_growing(current_price: float, two_year_last_predicted_price: float, five_year_last_predicted_price: float, historic_data: pd.DataFrame) -> bool:
     month_2_years_ago = __slice(historic_data, 365 * 2, 30)

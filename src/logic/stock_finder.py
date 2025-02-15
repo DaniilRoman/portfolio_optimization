@@ -9,7 +9,7 @@ from src.adapter.out.notify import notifier
 from src.adapter.out.analyze import analyzer
 from src.adapter.out.stats import stats_calculator
 from src.infrastructure.utils import utils
-from src.logic.data.data import StockData
+from src.logic.data.data import StockData, StockInfo
 
 
 def run(stock_name = None):
@@ -18,6 +18,8 @@ def run(stock_name = None):
     logging.info(f"Started an analyses of `{stock_name}`")
 
     stock_info = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*5))
+    if __toSkip(stock_info):
+        return
     two_year_data = __slice(stock_info.historic_data, 365 * 2)
     five_year_data = stock_info.historic_data
     five_year_prophet, five_year_predicted_prices = predicter.predict(five_year_data, predict_period=90)
@@ -45,3 +47,8 @@ def __clean_artifacts(analyses_result: StockData):
     os.remove(analyses_result.two_year_file_name)
     os.remove(analyses_result.five_year_file_name)
 
+
+def __toSkip(stock_info: StockInfo) -> bool:
+    name = stock_info.ticker.info['longName']
+    price = stock_info.ticker.info['open']
+    return "S&P" in name or price > 100
