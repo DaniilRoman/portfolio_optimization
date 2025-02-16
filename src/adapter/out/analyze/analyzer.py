@@ -65,7 +65,7 @@ def __is_stock_growing(current_price: float, two_year_last_predicted_price: floa
     month_2_years_ago = __slice(historic_data, 365 * 2, 30)
     month_5_years_ago = __slice(historic_data, 365 * 5, 30)
     percent_change = ((two_year_last_predicted_price - current_price) / (current_price)) * 100
-    growth_in_5_percent_archived = percent_change > 4.9
+    growth_in_5_percent_archived = percent_change > 9.9
     return current_price <= two_year_last_predicted_price \
         and current_price <= five_year_last_predicted_price \
         and __is_stock_historicly_growing(current_price, month_2_years_ago) \

@@ -6,6 +6,7 @@ from src.logic.data.data import StockData, ProfitabilityData
 
 def notify(result: StockData):
     if not result.is_stock_growing or not result.profitability_data.is_profitable():
+        print(f"Stock {result.stock_name} is not growing - will be skipped")
         return
     msg_to_send = __to_msg(result)
     first_photo_to_send = open(result.two_year_file_name, 'rb')
@@ -82,7 +83,7 @@ def __to_msg(result: StockData) -> str:
     beta = f'Beta: {result.beta}\n' if result.beta else ''
     standard_deviation = f'Standard Deviation: {result.standard_deviation}\n' if result.standard_deviation else ''
     dividend_yield = f'Dividend Yield: {result.dividend_yield}\n' if result.dividend_yield else ''
-    average_daily_volume = f'Average Daily Volume: {result.average_daily_volume}\n' if result.average_daily_volume else ''
+    average_daily_volume = f'Average Volume: {result.average_daily_volume}\n' if result.average_daily_volume else ''
     assets_under_management = f'Assets Under Management: {result.assets_under_management}\n' if result.assets_under_management else ''
     expense_ratio = f'Expense Ratio: {result.expense_ratio}\n' if result.expense_ratio else ''
     description = f'Description: {result.description}\n' if result.description else ''
