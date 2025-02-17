@@ -1,5 +1,6 @@
 name: build on push to the master branch
 on:
+  pull_request:
   push:
     branches:
       - master
