@@ -19,6 +19,7 @@ def run(stock_name = None):
 
     stock_info = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*5))
     if __toSkip(stock_info):
+        logging.info(f"Skipped stock: {stock_name}")
         return
     two_year_data = __slice(stock_info.historic_data, 365 * 2)
     five_year_data = stock_info.historic_data
@@ -49,6 +50,6 @@ def __clean_artifacts(analyses_result: StockData):
 
 
 def __toSkip(stock_info: StockInfo) -> bool:
-    name = stock_info.ticker.info['longName']
+    name = stock_info.ticker.info.get('longName', '')
     price = stock_info.ticker.info['open']
-    return "S&P" in name or price > 100
+    return 'S&P' in name or price > 100
