@@ -5,7 +5,7 @@ import configuration
 from src.logic.data.data import StockData, ProfitabilityData
 
 def notify(result: StockData):
-    if not result.is_stock_growing or not result.profitability_data.is_profitable():
+    if not __is_notifyable(result):
         print(f"Stock {result.stock_name} is not growing - will be skipped")
         return
     msg_to_send = __to_msg(result)
@@ -21,6 +21,10 @@ def notify(result: StockData):
             {'media' : second_photo_to_send, 'type' : 'photo'}
         ]
     )
+
+def __is_notifyable(result: StockData) -> bool:
+    # return result.is_stock_growing and result.profitability_data.is_profitable()
+    return True # TODO it is needed for selected ETFs
 
 def __escape_markdown(text: str) -> str:
     """

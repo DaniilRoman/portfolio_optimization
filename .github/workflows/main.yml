@@ -2,14 +2,19 @@ name: Execute price prediction
 on:
   workflow_dispatch:
   schedule:
-    - cron: '* * * * *'
+    - cron: '0 6 * * *'
+    - cron: '1 6 * * *'
+    - cron: '2 6 * * *'
+    - cron: '3 6 * * *'
+    - cron: '4 6 * * *'
+    - cron: '5 6 * * *'
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   build:
     name: run script
