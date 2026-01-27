@@ -6,7 +6,7 @@ authors = ["Daniil Roman <danroman17397@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12.7"
+python = "^3.12"
 pandas = "^3.0.0"
 yfinance = "^1.1.0"
 prophet = "^1.2.1"

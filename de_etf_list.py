@@ -17,6 +17,5 @@ scalable_capital_etfs = [
     'LGAG.L',
     'VUAA.L',
     'WDEF.MI',
-    'XDWU.DE',
-    'IE00BMFKG444.SG'
+    'XDWU.DE'
 ]

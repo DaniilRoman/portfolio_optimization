@@ -1,6 +1,7 @@
 import yfinance as yf
 import json
 import urllib
+import pandas as pd
 
 from src.infrastructure.utils import utils
 from src.logic.data.data import StockInfo
@@ -23,8 +24,15 @@ def download_stock_data(
     if hist.empty:
         raise data.SkipException(f'History data is empty for a stock: {stock_name}')
     
+    hist = hist[~hist.index.duplicated(keep='first')]
+    
     historic_data = hist["Close"].to_frame("y")
-    historic_data["ds"] = historic_data.index.date
+    historic_data["ds"] = pd.to_datetime(historic_data.index.date)
+    historic_data = historic_data.drop_duplicates(subset=['ds'], keep='last')
+    
+    # Ensure index is sorted just in case
+    historic_data = historic_data.sort_index()
+    
     return StockInfo(
         historic_data=historic_data, 
         ticker=stock)
