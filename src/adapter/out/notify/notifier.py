@@ -4,6 +4,14 @@ import numpy
 import configuration
 from src.logic.data.data import StockData, ProfitabilityData
 
+def send_text_message(text: str):
+    """
+    Send a simple text message to the telegram bot.
+    """
+    bot = telepot.Bot(configuration.TELEGRAM_TOKEN)
+    bot.getMe()
+    bot.sendMessage(chat_id=configuration.TELEGRAM_TO, text=text)
+
 def notify(result: StockData):
     if not __is_notifyable(result):
         print(f"Stock {result.stock_name} is not growing - will be skipped")
