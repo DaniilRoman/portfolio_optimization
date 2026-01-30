@@ -1,3 +1,5 @@
+import requests
+import configuration
 from deap import base, creator, tools, algorithms
 from deap.base import Toolbox
 
@@ -61,3 +63,8 @@ def optimize(job: StockOptimizationJob):
     toolbox = __create_toolbox(evaluate_func_wrapper, tuple(FUN_WEIGHTS.values()), tools.mutFlipBit)
     best_solution = __optimize_internal(toolbox, gen_one_individual_wrapper)
     return tools.selBest(best_solution[0], 1)[0]
+
+def __get_etf_map():
+    etf_to_count = requests.get(configuration.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})    
+    return etf_to_count.json()
+  

@@ -10,6 +10,7 @@ def __calculate_index(current_counter: int) -> int:
     return tmp_counter
 
 def pick():
+    url = configuration.GET_AND_INCREMENT_COUNTER_URL + "?window=1"
     current_counter = int(requests.get(configuration.GET_AND_INCREMENT_COUNTER_URL).content)
     stock_index = __calculate_index(current_counter)
     return stock_names.etf_list[stock_index]
