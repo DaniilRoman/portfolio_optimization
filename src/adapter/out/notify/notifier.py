@@ -36,14 +36,28 @@ def __escape_markdown(text: str) -> str:
 def __sector_allocation_pretty_print(d: dict) -> str:
     if not d:
         return ""
-    
-    # Sort the dictionary by value in descending order
-    sorted_items = sorted(d.items(), key=lambda item: item[1], reverse=True)
-    
+
+    # Filter out zero or near-zero values (epsilon) and non-numeric entries
+    epsilon = 1e-9
+    filtered_items = []
+    for key, value in d.items():
+        try:
+            val = float(value)
+        except (TypeError, ValueError):
+            continue
+        if val > epsilon:
+            filtered_items.append((key, val))
+
+    if not filtered_items:
+        return ""
+
+    # Sort the filtered items by value in descending order
+    sorted_items = sorted(filtered_items, key=lambda item: item[1], reverse=True)
+
     pretty_str = ""
     for key, value in sorted_items:
         pretty_str += f"{key.capitalize()}: {value:.2%}\n"
-    
+
     return f'\n\nSector Allocation:\n{pretty_str.strip()}\n'
 
 def __format_top_holdings(top_holdings: numpy.ndarray) -> str:

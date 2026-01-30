@@ -50,6 +50,7 @@ def __clean_artifacts(analyses_result: StockData):
 
 
 def __toSkip(stock_info: StockInfo) -> bool:
-    name = stock_info.ticker.info.get('longName', '')
-    price = stock_info.ticker.info['open']
-    return 'S&P' in name or price > 100
+    return False  # TODO disable skipping for selected ETFs
+    # name = stock_info.ticker.info.get('longName', '')
+    # price = stock_info.ticker.info['open']
+    # return 'S&P' in name or price > 100
