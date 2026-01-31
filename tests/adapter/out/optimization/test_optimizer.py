@@ -55,7 +55,7 @@ def create_test_stock_data():
 
 def test_optimizer():
     """Test the refactored optimize function"""
-    print("Testing refactored optimizer...")
+    print("Testing refactored optimizer with expense_ratio and dividend_yield...")
     
     # Create test data
     stocks = create_test_stock_data()
@@ -78,4 +78,7 @@ def test_optimizer():
         print("============================================")
         
         print("\n✅ Optimizer tests completed successfully!")
-        assert "Expected Profit" in result
+        # Updated assertion to check for new output format
+        assert "Net Profit" in result
+        assert "Dividend Income" in result
+        assert "Expenses" in result

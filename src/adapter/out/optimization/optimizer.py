@@ -65,6 +65,8 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     tickers = [stock.ticker_symbol for stock in stocks]
     current_prices = [stock.current_price for stock in stocks]
     predicted_prices = [stock.predict_price for stock in stocks]
+    dividend_yields = [stock.dividend_yield for stock in stocks]
+    expense_ratios = [stock.expense_ratio for stock in stocks]
     
     # Get current ETF ownership
     etf_map = __get_etf_map()
@@ -94,7 +96,34 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     def evaluate_func_wrapper(individual):
         # Calculate cost and predicted profit
         cost = sum(x * y for x, y in zip(current_prices, individual))
-        predicted_profit = sum(x * y * w for x, y, w in zip(predicted_prices, individual, ownership_weights))
+        
+        # Calculate net profit per stock: (capital_gain + dividend_income) * (1 - expense_ratio)
+        total_net_profit = 0.0
+        for i, shares in enumerate(individual):
+            if shares == 0:
+                continue
+                
+            current_price = current_prices[i]
+            predicted_price = predicted_prices[i]
+            dividend_yield = dividend_yields[i]
+            expense_ratio = expense_ratios[i]
+            ownership_weight = ownership_weights[i]
+            
+            # Capital gain from price appreciation
+            capital_gain = (predicted_price - current_price) * shares
+            
+            # Dividend income (assuming annual yield)
+            dividend_income = current_price * dividend_yield * shares
+            
+            # Total gross profit
+            gross_profit = capital_gain + dividend_income
+            
+            # Apply expense ratio penalty (net after fees)
+            net_profit = gross_profit * (1 - expense_ratio)
+            
+            # Apply ownership weight for diversification
+            weighted_profit = net_profit * ownership_weight
+            total_net_profit += weighted_profit
         
         # Penalize if cost exceeds budget
         if cost > budget:
@@ -102,9 +131,9 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
             return 100000000000, -10000000000
         
         # Objective 1: Minimize deviation from budget (prefer spending close to budget)
-        # Objective 2: Maximize weighted predicted profit
+        # Objective 2: Maximize weighted net profit (after expenses and dividends)
         budget_deviation = abs(budget - cost)
-        return budget_deviation, predicted_profit
+        return budget_deviation, total_net_profit
     
     def gen_one_individual_wrapper():
         return __gen_one_individual(max_shares_per_stock)
@@ -125,10 +154,14 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     for i, (ticker, shares) in enumerate(zip(tickers, best_individual)):
         if shares > 0:
             cost = shares * current_prices[i]
-            expected_profit = shares * (predicted_prices[i] - current_prices[i])
-            results.append((ticker, shares, cost, expected_profit))
+            # Calculate detailed profit breakdown
+            capital_gain = (predicted_prices[i] - current_prices[i]) * shares
+            dividend_income = current_prices[i] * dividend_yields[i] * shares
+            gross_profit = capital_gain + dividend_income
+            net_profit = gross_profit * (1 - expense_ratios[i])
+            results.append((ticker, shares, cost, net_profit, capital_gain, dividend_income, expense_ratios[i]))
     
-    # Sort by expected profit descending
+    # Sort by net profit descending
     results.sort(key=lambda x: x[3], reverse=True)
     
     # Create formatted string for Telegram
@@ -136,22 +169,32 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
         return "📊 *Portfolio Optimization Results*\n\nNo ETFs to buy with current budget and constraints."
     
     total_cost = sum(r[2] for r in results)
-    total_expected_profit = sum(r[3] for r in results)
+    total_net_profit = sum(r[3] for r in results)
+    total_capital_gain = sum(r[4] for r in results)
+    total_dividend_income = sum(r[5] for r in results)
     
     message_lines = [
         "📈 *Recommended Buys:*",
         ""
     ]
     
-    for ticker, shares, cost, expected_profit in results:
-        profit_percentage = (expected_profit / cost * 100) if cost > 0 else 0
+    for ticker, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio in results:
+        net_profit_percentage = (net_profit / cost * 100) if cost > 0 else 0
+        expense_amount = (capital_gain + dividend_income) * expense_ratio
+        
         message_lines.append(f"• *{ticker}*: {shares} shares")
         message_lines.append(f"  Cost: €{cost:.2f}")
-        message_lines.append(f"  Expected Profit: €{expected_profit:.2f} ({profit_percentage:.1f}%)")
+        message_lines.append(f"  Net Profit: €{net_profit:.2f} ({net_profit_percentage:.1f}%)")
+        message_lines.append(f"    - Capital Gain: €{capital_gain:.2f}")
+        message_lines.append(f"    - Dividend Income: €{dividend_income:.2f}")
+        message_lines.append(f"    - Expenses ({(expense_ratio*100):.2f}%): €{expense_amount:.2f}")
         message_lines.append("")
     
     message_lines.append(f"💰 *Total Investment:* €{total_cost:.2f}")
-    message_lines.append(f"📈 *Total Expected Profit:* €{total_expected_profit:.2f}")
+    message_lines.append(f"📈 *Total Net Profit:* €{total_net_profit:.2f}")
+    message_lines.append(f"   - Capital Gains: €{total_capital_gain:.2f}")
+    message_lines.append(f"   - Dividend Income: €{total_dividend_income:.2f}")
+    message_lines.append(f"   - Total Gross Profit: €{(total_capital_gain + total_dividend_income):.2f}")
     
     return "\n".join(message_lines)
 
