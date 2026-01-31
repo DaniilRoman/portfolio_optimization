@@ -10,7 +10,14 @@ import numpy as np
 # MUTPB is the probability for mutating an individual
 from src.logic.data.data import StockData
 
-CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 200, 70 # 200
+# Recommended GA parameters for 20 ETFs portfolio optimization
+CXPB = 0.35  # Crossover probability
+MUTPB = 0.55  # Mutation probability
+NUMBER_OF_ITERATIONS = 350  # Increased number of generations for better convergence
+NUMBER_OF_POPULATION = 120  # Increased population size for better search space coverage
+TOURNSIZE = 5  # Increased tournament size for better selection pressure
+MUTATION_INDPB = 0.4  # Probability of each gene to be mutated
+MATE_INDPB = 0.1  # Probability of each gene to be exchanged during crossover
 MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
 FUN_WEIGHTS = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
 
@@ -157,10 +164,10 @@ def __create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:
         creator.create("Individual", list, fitness=creator.FitnessFunc)
 
     toolbox = Toolbox()
-    toolbox.register("evaluate", eval_func)
-    toolbox.register("mate", tools.cxUniform, indpb=0.1)
-    toolbox.register("mutate", mutFlipBit, indpb=0.4)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    toolbox.register("evaluate", eval_func)    
+    toolbox.register("mate", tools.cxUniform, indpb=MATE_INDPB)
+    toolbox.register("mutate", mutFlipBit, indpb=MUTATION_INDPB)
+    toolbox.register("select", tools.selTournament, tournsize=TOURNSIZE)  # Increased for better selection pressure
     return toolbox
 
 
