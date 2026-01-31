@@ -13,6 +13,8 @@ prophet = "^1.3.0"
 telepot = "^12.7"
 python-decouple = "^3.8"
 beautifulsoup4 = "^4.14.3"
+deap = "^1.4.3"
+numpy = "^2.4.1"
 
 [build-system]
 requires = ["poetry-core"]
