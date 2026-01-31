@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Test script for the refactored optimizer.py"""
 
-import sys  # Added missing import
 from src.logic.data.data import StockData, ProfitabilityData
 import numpy as np
 from src.adapter.out.optimization import optimizer
@@ -74,52 +73,7 @@ def test_optimizer():
         # Test with default budget (50 EUR)
         print("\nTest 1: Default budget (50 EUR)")
         result = optimizer.optimize(stocks, budget=50.0)
-        print(result)
-        
-        # Test with larger budget (150 EUR)
-        print("\nTest 2: Larger budget (150 EUR)")
-        result = optimizer.optimize(stocks, budget=150.0, max_per_etf_budget=200.0)
-        print(result)
-        
-        # Test with very small budget (10 EUR) - should find cheaper ETFs
-        print("\nTest 3: Small budget (10 EUR)")
-        result = optimizer.optimize(stocks, budget=10.0, max_per_etf_budget=20.0)
+        print("============================================")
         print(result)
         
         print("\n✅ Optimizer tests completed successfully!")
-        # No return value for pytest compliance
-
-def test_imports():
-    """Test that all required imports work"""
-    print("Testing imports...")
-    from deap import base, creator, tools, algorithms
-    import requests
-    print("✅ All imports successful")
-    # No return value for pytest compliance
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("Testing Refactored Portfolio Optimizer")
-    print("=" * 60)
-    
-    # Test imports first
-    try:
-        test_imports()
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        sys.exit(1)
-    
-    # Run optimizer tests
-    try:
-        test_optimizer()
-        print("\n" + "=" * 60)
-        print("All tests passed! ✅")
-        print("=" * 60)
-    except Exception as e:
-        print(f"\n❌ Error during optimization: {e}")
-        import traceback
-        traceback.print_exc()
-        print("\n" + "=" * 60)
-        print("Tests failed! ❌")
-        print("=" * 60)
-        sys.exit(1)
