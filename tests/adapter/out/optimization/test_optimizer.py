@@ -12,11 +12,11 @@ def create_test_stock_data():
     
     # Create 5 sample ETFs with different prices and predicted values
     test_data = [
-        ("VOO", "Vanguard S&P 500 ETF", 450.25, 470.50),
-        ("QQQ", "Invesco QQQ Trust", 420.75, 440.20),
-        ("VTI", "Vanguard Total Stock Market ETF", 250.30, 260.80),
+        ("VOO", "Vanguard S&P 500 ETF", 40.25, 41.50),
+        ("QQQ", "Invesco QQQ Trust", 20.75, 22.20),
+        ("VTI", "Vanguard Total Stock Market ETF", 25.30, 26.80),
         ("ARKK", "ARK Innovation ETF", 55.80, 60.25),
-        ("SPY", "SPDR S&P 500 ETF Trust", 510.40, 525.75),
+        ("SPY", "SPDR S&P 500 ETF Trust", 10.40, 11.75),
     ]
     
     for ticker, name, current_price, predict_price in test_data:
@@ -75,5 +75,6 @@ def test_optimizer():
         result = optimizer.optimize(stocks, budget=50.0)
         print("============================================")
         print(result)
+        print("============================================")
         
         print("\n✅ Optimizer tests completed successfully!")

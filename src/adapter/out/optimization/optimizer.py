@@ -49,7 +49,7 @@ def __optimize_internal(toolbox, gen_individual_func):
     return algorithms.eaSimple(pop, toolbox, cxpb=CXPB, mutpb=MUTPB, ngen=NUMBER_OF_ITERATIONS)
 
 
-def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 150.0) -> str:
+def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
     """
     Optimize portfolio to suggest what ETFs to buy next.
     
@@ -139,10 +139,6 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     total_expected_profit = sum(r[3] for r in results)
     
     message_lines = [
-        "📊 *Portfolio Optimization Results*",
-        f"Budget: €{budget:.2f}",
-        f"Max per ETF: €{max_per_etf_budget:.2f}",
-        "",
         "📈 *Recommended Buys:*",
         ""
     ]
