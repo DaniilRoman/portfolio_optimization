@@ -35,3 +35,6 @@ jobs:
 
       - name: Install deps
         run: poetry install
+
+      - name: Run tests
+        run: poetry run pytest
