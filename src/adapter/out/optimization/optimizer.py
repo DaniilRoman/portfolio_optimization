@@ -159,30 +159,32 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
             dividend_income = current_prices[i] * dividend_yields[i] * shares
             gross_profit = capital_gain + dividend_income
             net_profit = gross_profit * (1 - expense_ratios[i])
-            results.append((ticker, shares, cost, net_profit, capital_gain, dividend_income, expense_ratios[i]))
+            stock_name = stocks[i].stock_name
+            results.append((ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratios[i]))
     
     # Sort by net profit descending
-    results.sort(key=lambda x: x[3], reverse=True)
+    results.sort(key=lambda x: x[4], reverse=True)
     
     # Create formatted string for Telegram
     if not results:
         return "📊 *Portfolio Optimization Results*\n\nNo ETFs to buy with current budget and constraints."
     
-    total_cost = sum(r[2] for r in results)
-    total_net_profit = sum(r[3] for r in results)
-    total_capital_gain = sum(r[4] for r in results)
-    total_dividend_income = sum(r[5] for r in results)
+    total_cost = sum(r[3] for r in results)
+    total_net_profit = sum(r[4] for r in results)
+    total_capital_gain = sum(r[5] for r in results)
+    total_dividend_income = sum(r[6] for r in results)
     
     message_lines = [
         "📈 *Recommended Buys:*",
         ""
     ]
     
-    for ticker, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio in results:
+    for ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio in results:
         net_profit_percentage = (net_profit / cost * 100) if cost > 0 else 0
         expense_amount = (capital_gain + dividend_income) * expense_ratio
         
         message_lines.append(f"• *{ticker}*: {shares} shares")
+        message_lines.append(f"  {stock_name}")
         message_lines.append(f"  Cost: €{cost:.2f}")
         message_lines.append(f"  Net Profit: €{net_profit:.2f} ({net_profit_percentage:.1f}%)")
         message_lines.append(f"    - Capital Gain: €{capital_gain:.2f}")
