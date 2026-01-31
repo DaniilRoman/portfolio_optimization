@@ -35,6 +35,7 @@ def run(stock_name = None):
     notifier.notify(analyses_result)
     stats_calculator.calculate(analyses_result)
     __clean_artifacts(analyses_result)
+    return analyses_result
 
 
 def __slice(historic_data, prev_date) -> any:
