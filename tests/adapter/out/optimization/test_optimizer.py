@@ -78,3 +78,4 @@ def test_optimizer():
         print("============================================")
         
         print("\n✅ Optimizer tests completed successfully!")
+        assert "Expected Profit" in result
