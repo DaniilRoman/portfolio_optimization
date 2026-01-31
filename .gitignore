@@ -1,3 +1,7 @@
 __pycache__/
 /downloaded_html/
 .idea/
+.test_files/
+/src/adapter/out/parser/
+.env
+
