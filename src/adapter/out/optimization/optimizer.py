@@ -1,5 +1,5 @@
 import requests
-import configuration
+import config.configuration as configuration
 from deap import base, creator, tools, algorithms
 from deap.base import Toolbox
 from typing import List, Dict, Tuple, Any
@@ -49,7 +49,7 @@ def __optimize_internal(toolbox, gen_individual_func):
     return algorithms.eaSimple(pop, toolbox, cxpb=CXPB, mutpb=MUTPB, ngen=NUMBER_OF_ITERATIONS)
 
 
-def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 150.0) -> List[Tuple[str, int, float, float]]:
+def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 150.0) -> str:
     """
     Optimize portfolio to suggest what ETFs to buy next.
     
@@ -59,7 +59,7 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
         max_per_etf_budget: Maximum to spend on a single ETF if expensive (default 150 EUR)
         
     Returns:
-        List of tuples (ticker_symbol, shares_to_buy, total_cost, expected_profit)
+        Formatted string for Telegram with optimization results
     """
     # Extract prices and tickers
     tickers = [stock.ticker_symbol for stock in stocks]
@@ -130,7 +130,34 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     
     # Sort by expected profit descending
     results.sort(key=lambda x: x[3], reverse=True)
-    return results
+    
+    # Create formatted string for Telegram
+    if not results:
+        return "📊 *Portfolio Optimization Results*\n\nNo ETFs to buy with current budget and constraints."
+    
+    total_cost = sum(r[2] for r in results)
+    total_expected_profit = sum(r[3] for r in results)
+    
+    message_lines = [
+        "📊 *Portfolio Optimization Results*",
+        f"Budget: €{budget:.2f}",
+        f"Max per ETF: €{max_per_etf_budget:.2f}",
+        "",
+        "📈 *Recommended Buys:*",
+        ""
+    ]
+    
+    for ticker, shares, cost, expected_profit in results:
+        profit_percentage = (expected_profit / cost * 100) if cost > 0 else 0
+        message_lines.append(f"• *{ticker}*: {shares} shares")
+        message_lines.append(f"  Cost: €{cost:.2f}")
+        message_lines.append(f"  Expected Profit: €{expected_profit:.2f} ({profit_percentage:.1f}%)")
+        message_lines.append("")
+    
+    message_lines.append(f"💰 *Total Investment:* €{total_cost:.2f}")
+    message_lines.append(f"📈 *Total Expected Profit:* €{total_expected_profit:.2f}")
+    
+    return "\n".join(message_lines)
 
 def __get_etf_map():
     etf_to_count = requests.get(configuration.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})    

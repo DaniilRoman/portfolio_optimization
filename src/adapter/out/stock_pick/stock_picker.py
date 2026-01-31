@@ -1,6 +1,6 @@
 import requests
-import configuration
-import stock_names
+import config.configuration as configuration
+import config.stock_names as stock_names
 
 def __calculate_index(current_counter: int) -> int:
     tmp_counter = current_counter

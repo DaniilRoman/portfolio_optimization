@@ -1,6 +1,6 @@
 import requests
 from src.logic.data.data import StockData
-import configuration
+import config.configuration as configuration
 
 def calculate(analyses_result: StockData):
     if analyses_result.is_stock_growing and analyses_result.profitability_data.is_profitable():

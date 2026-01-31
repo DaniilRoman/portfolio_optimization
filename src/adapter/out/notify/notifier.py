@@ -1,7 +1,7 @@
 import telepot
 import re
 import numpy
-import configuration
+import config.configuration as configuration
 from src.logic.data.data import StockData, ProfitabilityData
 
 def send_text_message(text: str):

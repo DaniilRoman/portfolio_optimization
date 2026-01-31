@@ -3,7 +3,7 @@ import logging
 from src.logic import stock_finder
 from src.logic.data import data
 from src.adapter.out.notify import notifier
-from stock_names import etf_list
+from config.stock_names import etf_list
 
 if __name__ == '__main__':
     notifier.send_text_message("=================")

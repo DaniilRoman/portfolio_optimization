@@ -1,4 +1,4 @@
-import de_etf_list
+import config.de_etf_list as de_etf_list
 
 sp500 = ['AOS', 'ABBV', 'ABMD', 'ACN', 'ATVI', 'ADM', 'ADP', 'AAP', 'AIG', 'APD', 'AKAM', 'ALK', 'ALB', 'ARE',
                    'ALGN', 'ALLE', 'LNT', 'ALL', 'GOOGL', 'GOOG', 'MO', 'AMZN', 'AMCR', 'AMD', 'AEE', 'AAL', 'AEP',
