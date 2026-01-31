@@ -4,13 +4,15 @@ from deap import base, creator, tools, algorithms
 from deap.base import Toolbox
 from typing import List, Dict, Tuple, Any
 import random
+import numpy as np
 
 # CXPB  is the probability with which two individuals are crossed
 # MUTPB is the probability for mutating an individual
 from src.logic.data.data import StockData
 
-CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 100, 70 # 200
-FUN_WEIGHTS = {"cost_func": -1.0, "profit_func": 1.0}
+CXPB, MUTPB, NUMBER_OF_ITERATIONS, NUMBER_OF_POPULATION = 0.3, 0.7, 200, 70 # 200
+MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
+FUN_WEIGHTS = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
 
 
 def __gen_one_individual(max_count_data):
@@ -24,6 +26,128 @@ def __evaluate(individual, predicted_prices, prices, budget):
     if cost > budget:
         return 100000000000, -10000000000
     return abs(budget - cost), predicted_cost - cost
+
+
+def __calculate_volatility_risk(individual, stocks, current_prices):
+    """
+    Calculate portfolio volatility risk using ETF standard deviations.
+    Returns normalized risk score (higher = more volatile = worse).
+    """
+    total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
+    
+    if total_value == 0:
+        return 0.0
+    
+    # Calculate weighted average of ETF standard deviations
+    weighted_volatility = 0.0
+    for i, shares in enumerate(individual):
+        if shares == 0:
+            continue
+        
+        etf_value = shares * current_prices[i]
+        weight = etf_value / total_value
+        std_dev = stocks[i].standard_deviation
+        
+        # Standard deviation is already annualized (from yfinance)
+        weighted_volatility += weight * std_dev
+    
+    return weighted_volatility
+
+
+def __calculate_sector_concentration_risk(individual, stocks, current_prices):
+    """
+    Calculate sector concentration risk.
+    Returns a penalty score (higher = more concentrated = worse)
+    """
+    # Calculate total portfolio value
+    total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
+    
+    if total_value == 0:
+        return 0.0
+    
+    # Aggregate sector exposure across all ETFs
+    sector_exposure = {}
+    
+    for i, shares in enumerate(individual):
+        if shares == 0:
+            continue
+        
+        stock = stocks[i]
+        etf_value = shares * current_prices[i]
+        etf_weight = etf_value / total_value
+        
+        # Add this ETF's sector allocations to total exposure
+        for sector, allocation in stock.sector_allocation.items():
+            sector_exposure[sector] = sector_exposure.get(sector, 0.0) + (etf_weight * allocation)
+    
+    if not sector_exposure:
+        return 0.0
+    
+    # Calculate concentration penalties
+    max_sector_exposure = max(sector_exposure.values())
+    
+    # Herfindahl index (sum of squared concentrations)
+    herfindahl = sum(exp**2 for exp in sector_exposure.values())
+    
+    # Penalty for exceeding max concentration
+    excess_concentration = max(0, max_sector_exposure - MAX_SECTOR_CONCENTRATION)
+    
+    # Combined risk score (normalized to 0-1 scale)
+    concentration_risk = (herfindahl + excess_concentration * 10)
+    
+    return concentration_risk
+
+
+def __calculate_company_overlap_risk(individual, stocks, current_prices):
+    """
+    Calculate risk from overlapping company holdings across ETFs.
+    Uses top_holdings data (np.ndarray format) to identify concentration.
+    """
+    total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
+    
+    if total_value == 0:
+        return 0.0
+    
+    # Aggregate company exposure across all ETFs
+    company_exposure = {}
+    
+    for i, shares in enumerate(individual):
+        if shares == 0:
+            continue
+        
+        stock = stocks[i]
+        etf_value = shares * current_prices[i]
+        etf_weight = etf_value / total_value
+        
+        # Parse top_holdings (np.ndarray format: rows of [company_name, weight])
+        for holding in stock.top_holdings:
+            try:
+                # holding is a numpy array row: [company_name, weight]
+                company = holding[0]
+                weight = float(holding[1])
+                
+                # Total exposure to this company
+                company_exposure[company] = company_exposure.get(company, 0.0) + (etf_weight * weight)
+            except (IndexError, ValueError, TypeError):
+                continue
+    
+    if not company_exposure:
+        return 0.0
+    
+    # Calculate risk metrics
+    max_company_exposure = max(company_exposure.values())
+    
+    # Count companies with >5% exposure (high concentration)
+    high_concentration_count = sum(1 for exp in company_exposure.values() if exp > 0.05)
+    
+    # Herfindahl index for company concentration
+    herfindahl = sum(exp**2 for exp in company_exposure.values())
+    
+    # Combined risk (normalized)
+    overlap_risk = max_company_exposure + (high_concentration_count * 0.01) + herfindahl
+    
+    return overlap_risk
+
 
 def __create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:
     # Check if creator classes already exist to avoid warnings
@@ -128,12 +252,24 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
         # Penalize if cost exceeds budget
         if cost > budget:
             # Heavy penalty for exceeding budget
-            return 100000000000, -10000000000
+            return 100000000000, -10000000000, 100000000000
         
-        # Objective 1: Minimize deviation from budget (prefer spending close to budget)
-        # Objective 2: Maximize weighted net profit (after expenses and dividends)
+        # Calculate risk components
+        volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
+        sector_risk = __calculate_sector_concentration_risk(individual, stocks, current_prices)
+        overlap_risk = __calculate_company_overlap_risk(individual, stocks, current_prices)
+        
+        # Combined risk score with weights: 40% volatility, 35% sector, 25% overlap
+        total_risk = (
+            0.25 * volatility_risk +
+            0.4 * sector_risk +
+            0.35 * overlap_risk
+        )
+        
         budget_deviation = abs(budget - cost)
-        return budget_deviation, total_net_profit
+        
+        # Return tuple: (minimize deviation, maximize profit, minimize risk)
+        return budget_deviation, total_net_profit, -total_risk  # Negative risk to minimize
     
     def gen_one_individual_wrapper():
         return __gen_one_individual(max_shares_per_stock)
@@ -145,7 +281,7 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
                 individual[i] = max_shares_per_stock[i] - individual[i]
         return individual,
     
-    toolbox = __create_toolbox(evaluate_func_wrapper, tuple(FUN_WEIGHTS.values()), mutFlipBit)
+    toolbox = __create_toolbox(evaluate_func_wrapper, FUN_WEIGHTS, mutFlipBit)
     best_solution = __optimize_internal(toolbox, gen_one_individual_wrapper)
     best_individual = tools.selBest(best_solution[0], 1)[0]
     
@@ -174,6 +310,11 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     total_capital_gain = sum(r[5] for r in results)
     total_dividend_income = sum(r[6] for r in results)
     
+    # Calculate risk metrics for the final portfolio
+    final_volatility = __calculate_volatility_risk(best_individual, stocks, current_prices)
+    final_sector_risk = __calculate_sector_concentration_risk(best_individual, stocks, current_prices)
+    final_overlap_risk = __calculate_company_overlap_risk(best_individual, stocks, current_prices)
+    
     message_lines = [
         "📈 *Recommended Buys:*",
         ""
@@ -197,6 +338,11 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     message_lines.append(f"   - Capital Gains: €{total_capital_gain:.2f}")
     message_lines.append(f"   - Dividend Income: €{total_dividend_income:.2f}")
     message_lines.append(f"   - Total Gross Profit: €{(total_capital_gain + total_dividend_income):.2f}")
+    message_lines.append("")
+    message_lines.append(f"⚠️ *Risk Metrics:*")
+    message_lines.append(f"   - Volatility: {(final_volatility*100):.1f}%")
+    message_lines.append(f"   - Sector Concentration: {final_sector_risk:.3f}")
+    message_lines.append(f"   - Company Overlap: {final_overlap_risk:.3f}")
     
     return "\n".join(message_lines)
 
