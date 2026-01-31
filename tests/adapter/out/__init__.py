@@ -1,0 +1,1 @@
+# Tests adapter/out package

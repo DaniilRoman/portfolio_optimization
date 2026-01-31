@@ -16,9 +16,19 @@ beautifulsoup4 = "^4.14.3"
 deap = "^1.4.3"
 numpy = "^2.4.1"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [[tool.poetry.packages]]
 include = "src"
+
+[[tool.poetry.packages]]
+include = "config"
