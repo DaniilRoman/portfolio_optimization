@@ -23,8 +23,42 @@ FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
 FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0, 0.0)  # min deviation, max profit, ignore risk
 
 
-def __gen_one_individual(max_count_data):
-    return [random.randint(0, max_count) for max_count in max_count_data]
+def __gen_one_individual(max_count_data, current_prices=None, budget=None):
+    """Generate a random individual that respects budget constraints."""
+    if current_prices is not None and budget is not None:
+        # Try to generate individuals that respect budget
+        individual = [0] * len(max_count_data)
+        remaining_budget = budget
+        
+        # Try to add shares for each ETF, starting with random order
+        indices = list(range(len(max_count_data)))
+        random.shuffle(indices)
+        
+        for i in indices:
+            if max_count_data[i] == 0:
+                continue
+                
+            max_shares = max_count_data[i]
+            price = current_prices[i]
+            
+            if price <= 0:
+                continue
+                
+            # Calculate maximum shares we can afford with remaining budget
+            max_affordable = min(max_shares, int(remaining_budget / price))
+            
+            if max_affordable > 0:
+                # Randomly choose number of shares (could be 0)
+                shares = random.randint(0, max_affordable)
+                individual[i] = shares
+                remaining_budget -= shares * price
+                
+                if remaining_budget <= 0:
+                    break
+        return individual
+    else:
+        # Fallback to simple random generation
+        return [random.randint(0, max_count) for max_count in max_count_data]
 
 
 def __evaluate(individual, predicted_prices, prices, budget):
@@ -320,13 +354,14 @@ def _run_genetic_algorithm(
     def mutFlipBit(individual, indpb):
         for i in range(len(individual)):
             if random.random() < indpb:
-                # Flip within bounds of max_shares_per_stock
-                individual[i] = max_shares_per_stock[i] - individual[i]
+                # Mutate to a random value within bounds (0 to max_shares_per_stock[i])
+                # This is better than simple flip as it explores more of the search space
+                individual[i] = random.randint(0, max_shares_per_stock[i])
         return individual,
     
     # Create individual generator
     def gen_one_individual_wrapper():
-        return __gen_one_individual(max_shares_per_stock)
+        return __gen_one_individual(max_shares_per_stock, current_prices, budget)
     
     # Select weights based on risk inclusion
     weights = FUN_WEIGHTS_RISK_AWARE if include_risk else FUN_WEIGHTS_PROFIT_ONLY
@@ -418,11 +453,19 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     Args:
         stocks: List of StockData objects containing current and predicted prices
         budget: Ideal budget to spend (default 50 EUR)
-        max_per_etf_budget: Maximum to spend on a single ETF if expensive (default 150 EUR)
+        max_per_etf_budget: Maximum to spend on a single ETF if expensive. 
+                           If None, defaults to min(150, budget / 2) to ensure total doesn't exceed budget.
         
     Returns:
         Formatted string for Telegram with optimization results
     """
+    # Set reasonable default for max_per_etf_budget if not provided
+    if max_per_etf_budget is None:
+        # Ensure max_per_etf_budget is at most half the budget to allow diversification
+        max_per_etf_budget = min(50.0, budget / 2)
+    elif max_per_etf_budget > budget:
+        # Cap max_per_etf_budget at budget to prevent impossible constraints
+        max_per_etf_budget = budget
     # Run risk-aware optimization
     risk_aware_individual, risk_stocks, risk_current_prices, risk_predicted_prices, risk_dividend_yields, risk_expense_ratios, risk_tickers = _run_genetic_algorithm(
         stocks, budget, max_per_etf_budget, include_risk=True
