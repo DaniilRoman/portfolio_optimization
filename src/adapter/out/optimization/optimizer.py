@@ -20,7 +20,7 @@ MUTATION_INDPB = 0.4  # Probability of each gene to be mutated
 MATE_INDPB = 0.1  # Probability of each gene to be exchanged during crossover
 MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
 FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
-FUN_WEIGHTS_PROFIT_ONLY = (0.0, 1.0, 0.0)  # ignore deviation, max profit, ignore risk
+FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0, 0.0)  # min deviation, max profit, ignore risk
 
 
 def __gen_one_individual(max_count_data):
@@ -270,8 +270,8 @@ def _create_evaluator_factory(
             # Heavy penalty for exceeding budget
             return 100000000000, -10000000000, 100000000000
         
+        budget_deviation = abs(budget - cost)
         if include_risk:
-            budget_deviation = abs(budget - cost)
             # Calculate risk components
             volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
             sector_risk = __calculate_sector_concentration_risk(individual, stocks, current_prices)
@@ -287,8 +287,8 @@ def _create_evaluator_factory(
             # Return tuple: (minimize deviation, maximize profit, minimize risk)
             return budget_deviation, total_net_profit, -total_risk  # Negative risk to minimize
         else:
-            # Profit-only optimization: ignore risk
-            return 0.0, total_net_profit, 0.0
+            # Profit-only optimization: ignore risk but still respect budget deviation
+            return budget_deviation, total_net_profit, 0.0
     
     return evaluate_func
 
