@@ -2,7 +2,7 @@ import requests
 import config.configuration as configuration
 from deap import base, creator, tools, algorithms
 from deap.base import Toolbox
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Callable
 import random
 import numpy as np
 
@@ -19,7 +19,8 @@ TOURNSIZE = 5  # Increased tournament size for better selection pressure
 MUTATION_INDPB = 0.4  # Probability of each gene to be mutated
 MATE_INDPB = 0.1  # Probability of each gene to be exchanged during crossover
 MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
-FUN_WEIGHTS = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
+FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
+FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0, 0.0)  # min deviation, max profit, ignore risk
 
 
 def __gen_one_individual(max_count_data):
@@ -180,30 +181,19 @@ def __optimize_internal(toolbox, gen_individual_func):
     return algorithms.eaSimple(pop, toolbox, cxpb=CXPB, mutpb=MUTPB, ngen=NUMBER_OF_ITERATIONS)
 
 
-def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
-    """
-    Optimize portfolio to suggest what ETFs to buy next.
-    
-    Args:
-        stocks: List of StockData objects containing current and predicted prices
-        budget: Ideal budget to spend (default 50 EUR)
-        max_per_etf_budget: Maximum to spend on a single ETF if expensive (default 150 EUR)
-        
-    Returns:
-        Formatted string for Telegram with optimization results
-    """
-    # Extract prices and tickers
+def _prepare_stock_data(stocks: List[StockData]):
+    """Extract and prepare stock data for optimization."""
     tickers = [stock.ticker_symbol for stock in stocks]
     current_prices = [stock.current_price for stock in stocks]
     predicted_prices = [stock.predict_price for stock in stocks]
     dividend_yields = [stock.dividend_yield for stock in stocks]
     expense_ratios = [stock.expense_ratio for stock in stocks]
     
-    # Get current ETF ownership
-    etf_map = __get_etf_map()
-    
-    # Calculate max shares based on budget constraints
-    # For each ETF, we can spend up to max_per_etf_budget, but prefer to stay near budget
+    return tickers, current_prices, predicted_prices, dividend_yields, expense_ratios
+
+
+def _calculate_max_shares(current_prices: List[float], max_per_etf_budget: float = 50.0):
+    """Calculate maximum shares per ETF based on budget constraints."""
     max_shares_per_stock = []
     for price in current_prices:
         if price <= 0:
@@ -215,7 +205,11 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
             max_shares = min(max_by_budget, 100)  # Cap at 100 shares max
         max_shares_per_stock.append(max_shares)
     
-    # Adjust fitness based on current ownership - prefer ETFs with lower current ownership
+    return max_shares_per_stock
+
+
+def _create_ownership_weights(tickers: List[str], etf_map: Dict[str, int]):
+    """Calculate diversification weights based on current ownership."""
     ownership_weights = []
     for ticker in tickers:
         current_count = etf_map.get(ticker, 0)
@@ -224,7 +218,22 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
         weight = 1.0 / (1.0 + current_count)
         ownership_weights.append(weight)
     
-    def evaluate_func_wrapper(individual):
+    return ownership_weights
+
+
+def _create_evaluator_factory(
+    current_prices: List[float],
+    predicted_prices: List[float],
+    dividend_yields: List[float],
+    expense_ratios: List[float],
+    ownership_weights: List[float],
+    stocks: List[StockData],
+    budget: float,
+    include_risk: bool = True
+) -> Callable:
+    """Create an evaluator function for the genetic algorithm."""
+    
+    def evaluate_func(individual):
         # Calculate cost and predicted profit
         cost = sum(x * y for x, y in zip(current_prices, individual))
         
@@ -261,26 +270,54 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
             # Heavy penalty for exceeding budget
             return 100000000000, -10000000000, 100000000000
         
-        # Calculate risk components
-        volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
-        sector_risk = __calculate_sector_concentration_risk(individual, stocks, current_prices)
-        overlap_risk = __calculate_company_overlap_risk(individual, stocks, current_prices)
-        
-        # Combined risk score with weights: 40% volatility, 35% sector, 25% overlap
-        total_risk = (
-            0.25 * volatility_risk +
-            0.4 * sector_risk +
-            0.35 * overlap_risk
-        )
-        
         budget_deviation = abs(budget - cost)
         
-        # Return tuple: (minimize deviation, maximize profit, minimize risk)
-        return budget_deviation, total_net_profit, -total_risk  # Negative risk to minimize
+        if include_risk:
+            # Calculate risk components
+            volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
+            sector_risk = __calculate_sector_concentration_risk(individual, stocks, current_prices)
+            overlap_risk = __calculate_company_overlap_risk(individual, stocks, current_prices)
+            
+            # Combined risk score with weights: 40% volatility, 35% sector, 25% overlap
+            total_risk = (
+                0.25 * volatility_risk +
+                0.4 * sector_risk +
+                0.35 * overlap_risk
+            )
+            
+            # Return tuple: (minimize deviation, maximize profit, minimize risk)
+            return budget_deviation, total_net_profit, -total_risk  # Negative risk to minimize
+        else:
+            # Profit-only optimization: ignore risk
+            return budget_deviation, total_net_profit, 0.0
     
-    def gen_one_individual_wrapper():
-        return __gen_one_individual(max_shares_per_stock)
+    return evaluate_func
+
+
+def _run_genetic_algorithm(
+    stocks: List[StockData],
+    budget: float,
+    max_per_etf_budget: float,
+    include_risk: bool = True
+) -> Tuple[List[int], List[StockData], List[float], List[float], List[float], List[float], List[float]]:
+    """Run genetic algorithm optimization with specified risk inclusion."""
+    # Prepare data
+    tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
     
+    # Get current ETF ownership
+    etf_map = __get_etf_map()
+    
+    # Calculate constraints and weights
+    max_shares_per_stock = _calculate_max_shares(current_prices, max_per_etf_budget)
+    ownership_weights = _create_ownership_weights(tickers, etf_map)
+    
+    # Create evaluator
+    evaluator = _create_evaluator_factory(
+        current_prices, predicted_prices, dividend_yields, expense_ratios,
+        ownership_weights, stocks, budget, include_risk
+    )
+    
+    # Create mutation function
     def mutFlipBit(individual, indpb):
         for i in range(len(individual)):
             if random.random() < indpb:
@@ -288,10 +325,32 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
                 individual[i] = max_shares_per_stock[i] - individual[i]
         return individual,
     
-    toolbox = __create_toolbox(evaluate_func_wrapper, FUN_WEIGHTS, mutFlipBit)
+    # Create individual generator
+    def gen_one_individual_wrapper():
+        return __gen_one_individual(max_shares_per_stock)
+    
+    # Select weights based on risk inclusion
+    weights = FUN_WEIGHTS_RISK_AWARE if include_risk else FUN_WEIGHTS_PROFIT_ONLY
+    
+    # Run optimization
+    toolbox = __create_toolbox(evaluator, weights, mutFlipBit)
     best_solution = __optimize_internal(toolbox, gen_one_individual_wrapper)
     best_individual = tools.selBest(best_solution[0], 1)[0]
     
+    return best_individual, stocks, current_prices, predicted_prices, dividend_yields, expense_ratios, tickers
+
+
+def _format_portfolio_results(
+    best_individual: List[int],
+    stocks: List[StockData],
+    current_prices: List[float],
+    predicted_prices: List[float],
+    dividend_yields: List[float],
+    expense_ratios: List[float],
+    tickers: List[str],
+    include_risk: bool = True
+) -> str:
+    """Format portfolio optimization results into a string."""
     # Format results: only include ETFs with positive share count
     results = []
     for i, (ticker, shares) in enumerate(zip(tickers, best_individual)):
@@ -308,24 +367,16 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     # Sort by net profit descending
     results.sort(key=lambda x: x[4], reverse=True)
     
-    # Create formatted string for Telegram
+    # Create formatted string
     if not results:
-        return "📊 *Portfolio Optimization Results*\n\nNo ETFs to buy with current budget and constraints."
+        return "No ETFs to buy with current budget and constraints."
     
     total_cost = sum(r[3] for r in results)
     total_net_profit = sum(r[4] for r in results)
     total_capital_gain = sum(r[5] for r in results)
     total_dividend_income = sum(r[6] for r in results)
     
-    # Calculate risk metrics for the final portfolio
-    final_volatility = __calculate_volatility_risk(best_individual, stocks, current_prices)
-    final_sector_risk = __calculate_sector_concentration_risk(best_individual, stocks, current_prices)
-    final_overlap_risk = __calculate_company_overlap_risk(best_individual, stocks, current_prices)
-    
-    message_lines = [
-        "📈 *Recommended Buys:*",
-        ""
-    ]
+    message_lines = []
     
     for ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio in results:
         net_profit_percentage = (net_profit / cost * 100) if cost > 0 else 0
@@ -345,11 +396,67 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     message_lines.append(f"   - Capital Gains: €{total_capital_gain:.2f}")
     message_lines.append(f"   - Dividend Income: €{total_dividend_income:.2f}")
     message_lines.append(f"   - Total Gross Profit: €{(total_capital_gain + total_dividend_income):.2f}")
-    message_lines.append("")
-    message_lines.append(f"⚠️ *Risk Metrics:*")
-    message_lines.append(f"   - Volatility: {(final_volatility*100):.1f}%")
-    message_lines.append(f"   - Sector Concentration: {final_sector_risk:.3f}")
-    message_lines.append(f"   - Company Overlap: {final_overlap_risk:.3f}")
+    
+    if include_risk:
+        # Calculate risk metrics for the final portfolio
+        final_volatility = __calculate_volatility_risk(best_individual, stocks, current_prices)
+        final_sector_risk = __calculate_sector_concentration_risk(best_individual, stocks, current_prices)
+        final_overlap_risk = __calculate_company_overlap_risk(best_individual, stocks, current_prices)
+        
+        message_lines.append("")
+        message_lines.append(f"⚠️ *Risk Metrics:*")
+        message_lines.append(f"   - Volatility: {(final_volatility*100):.1f}%")
+        message_lines.append(f"   - Sector Concentration: {final_sector_risk:.3f}")
+        message_lines.append(f"   - Company Overlap: {final_overlap_risk:.3f}")
+    
+    return "\n".join(message_lines)
+
+
+def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
+    """
+    Optimize portfolio to suggest what ETFs to buy next.
+    
+    Args:
+        stocks: List of StockData objects containing current and predicted prices
+        budget: Ideal budget to spend (default 50 EUR)
+        max_per_etf_budget: Maximum to spend on a single ETF if expensive (default 150 EUR)
+        
+    Returns:
+        Formatted string for Telegram with optimization results
+    """
+    # Run risk-aware optimization
+    risk_aware_individual, risk_stocks, risk_current_prices, risk_predicted_prices, risk_dividend_yields, risk_expense_ratios, risk_tickers = _run_genetic_algorithm(
+        stocks, budget, max_per_etf_budget, include_risk=True
+    )
+    
+    # Run profit-only optimization
+    profit_only_individual, profit_stocks, profit_current_prices, profit_predicted_prices, profit_dividend_yields, profit_expense_ratios, profit_tickers = _run_genetic_algorithm(
+        stocks, budget, max_per_etf_budget, include_risk=False
+    )
+    
+    # Format both results
+    risk_aware_results = _format_portfolio_results(
+        risk_aware_individual, risk_stocks, risk_current_prices, risk_predicted_prices,
+        risk_dividend_yields, risk_expense_ratios, risk_tickers, include_risk=True
+    )
+    
+    profit_only_results = _format_portfolio_results(
+        profit_only_individual, profit_stocks, profit_current_prices, profit_predicted_prices,
+        profit_dividend_yields, profit_expense_ratios, profit_tickers, include_risk=False
+    )
+    
+    # Combine results with headers
+    message_lines = [
+        "📊 *Portfolio Optimization Results*",
+        "",
+        "⚠️ **Risk-Aware Optimization** (Minimizes risk while maximizing profit)",
+        "",
+        risk_aware_results,
+        "",
+        "📈 **Profit-Only Optimization** (Maximizes profit only)",
+        "",
+        profit_only_results
+    ]
     
     return "\n".join(message_lines)
 
