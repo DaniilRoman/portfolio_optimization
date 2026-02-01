@@ -20,7 +20,7 @@ MUTATION_INDPB = 0.4  # Probability of each gene to be mutated
 MATE_INDPB = 0.1  # Probability of each gene to be exchanged during crossover
 MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
 FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
-FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0, 0.0)  # min deviation, max profit, ignore risk
+FUN_WEIGHTS_PROFIT_ONLY = (0.0, 1.0, 0.0)  # ignore deviation, max profit, ignore risk
 
 
 def __gen_one_individual(max_count_data):
@@ -270,9 +270,8 @@ def _create_evaluator_factory(
             # Heavy penalty for exceeding budget
             return 100000000000, -10000000000, 100000000000
         
-        budget_deviation = abs(budget - cost)
-        
         if include_risk:
+            budget_deviation = abs(budget - cost)
             # Calculate risk components
             volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
             sector_risk = __calculate_sector_concentration_risk(individual, stocks, current_prices)
@@ -289,7 +288,7 @@ def _create_evaluator_factory(
             return budget_deviation, total_net_profit, -total_risk  # Negative risk to minimize
         else:
             # Profit-only optimization: ignore risk
-            return budget_deviation, total_net_profit, 0.0
+            return 0.0, total_net_profit, 0.0
     
     return evaluate_func
 
@@ -397,17 +396,17 @@ def _format_portfolio_results(
     message_lines.append(f"   - Dividend Income: €{total_dividend_income:.2f}")
     message_lines.append(f"   - Total Gross Profit: €{(total_capital_gain + total_dividend_income):.2f}")
     
-    if include_risk:
-        # Calculate risk metrics for the final portfolio
-        final_volatility = __calculate_volatility_risk(best_individual, stocks, current_prices)
-        final_sector_risk = __calculate_sector_concentration_risk(best_individual, stocks, current_prices)
-        final_overlap_risk = __calculate_company_overlap_risk(best_individual, stocks, current_prices)
-        
-        message_lines.append("")
-        message_lines.append(f"⚠️ *Risk Metrics:*")
-        message_lines.append(f"   - Volatility: {(final_volatility*100):.1f}%")
-        message_lines.append(f"   - Sector Concentration: {final_sector_risk:.3f}")
-        message_lines.append(f"   - Company Overlap: {final_overlap_risk:.3f}")
+    # Always calculate and display risk metrics, regardless of whether they were used in optimization
+    # Calculate risk metrics for the final portfolio
+    final_volatility = __calculate_volatility_risk(best_individual, stocks, current_prices)
+    final_sector_risk = __calculate_sector_concentration_risk(best_individual, stocks, current_prices)
+    final_overlap_risk = __calculate_company_overlap_risk(best_individual, stocks, current_prices)
+    
+    message_lines.append("")
+    message_lines.append(f"⚠️ *Risk Metrics:*")
+    message_lines.append(f"   - Volatility: {(final_volatility*100):.1f}%")
+    message_lines.append(f"   - Sector Concentration: {final_sector_risk:.3f}")
+    message_lines.append(f"   - Company Overlap: {final_overlap_risk:.3f}")
     
     return "\n".join(message_lines)
 
