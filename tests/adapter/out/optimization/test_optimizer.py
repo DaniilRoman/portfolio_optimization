@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Test script for the refactored optimizer.py"""
 
-from src.logic.data.data import StockData, ProfitabilityData
+from unittest.mock import Mock, patch
 import numpy as np
 from src.adapter.out.optimization import optimizer
-from unittest.mock import Mock, patch
+from src.logic.data.data import StockData, ProfitabilityData
 
 def create_test_stock_data():
     """Create sample StockData objects for testing"""
