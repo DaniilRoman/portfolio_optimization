@@ -19,8 +19,10 @@ TOURNSIZE = 5  # Increased tournament size for better selection pressure
 MUTATION_INDPB = 0.4  # Probability of each gene to be mutated
 MATE_INDPB = 0.1  # Probability of each gene to be exchanged during crossover
 MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
-FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0, 1.0)  # min deviation, max profit, min risk
-FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0, 0.0)  # min deviation, max profit, ignore risk
+# For risk-aware: minimize deviation, maximize (profit - risk_penalty)
+# For profit-only: minimize deviation, maximize profit
+FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0)  # min deviation, max adjusted_profit
+FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0)  # min deviation, max profit
 
 
 def __gen_one_individual(max_count_data, current_prices=None, budget=None):
@@ -302,7 +304,7 @@ def _create_evaluator_factory(
         # Penalize if cost exceeds budget
         if cost > budget:
             # Heavy penalty for exceeding budget
-            return 100000000000, -10000000000, 100000000000
+            return 100000000000, -10000000000
         
         budget_deviation = abs(budget - cost)
         if include_risk:
@@ -312,17 +314,21 @@ def _create_evaluator_factory(
             overlap_risk = __calculate_company_overlap_risk(individual, stocks, current_prices)
             
             # Combined risk score with weights: 40% volatility, 35% sector, 25% overlap
-            total_risk = (
+            # Scale risk to be comparable to profit values (profit is in euros, risk is 0-1 scale)
+            # Multiply by a scaling factor to make risk matter more in the optimization
+            risk_scaling_factor = 100.0  # Scale risk to be comparable to profit values
+            total_risk = risk_scaling_factor * (
                 0.25 * volatility_risk +
                 0.4 * sector_risk +
                 0.35 * overlap_risk
             )
             
-            # Return tuple: (minimize deviation, maximize profit, minimize risk)
-            return budget_deviation, total_net_profit, -total_risk  # Negative risk to minimize
+            # For risk-aware: maximize (profit - risk_penalty)
+            adjusted_profit = total_net_profit - total_risk
+            return budget_deviation, adjusted_profit
         else:
-            # Profit-only optimization: ignore risk but still respect budget deviation
-            return budget_deviation, total_net_profit, 0.0
+            # Profit-only optimization: maximize profit
+            return budget_deviation, total_net_profit
     
     return evaluate_func
 
@@ -334,11 +340,21 @@ def _run_genetic_algorithm(
     include_risk: bool = True
 ) -> Tuple[List[int], List[StockData], List[float], List[float], List[float], List[float], List[float]]:
     """Run genetic algorithm optimization with specified risk inclusion."""
-    # Prepare data
-    tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
-    
     # Get current ETF ownership
     etf_map = __get_etf_map()
+    return _run_genetic_algorithm_with_map(stocks, budget, max_per_etf_budget, etf_map, include_risk)
+
+
+def _run_genetic_algorithm_with_map(
+    stocks: List[StockData],
+    budget: float,
+    max_per_etf_budget: float,
+    etf_map: Dict[str, int],
+    include_risk: bool = True
+) -> Tuple[List[int], List[StockData], List[float], List[float], List[float], List[float], List[float]]:
+    """Run genetic algorithm optimization with pre-fetched ETF ownership map."""
+    # Prepare data
+    tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
     
     # Calculate constraints and weights
     max_shares_per_stock = _calculate_max_shares(current_prices, max_per_etf_budget)
@@ -466,14 +482,19 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     elif max_per_etf_budget > budget:
         # Cap max_per_etf_budget at budget to prevent impossible constraints
         max_per_etf_budget = budget
+    
+    # Get current ETF ownership ONCE and reuse for both optimizations
+    # This prevents the counter from being incremented between optimizations
+    etf_map = __get_etf_map()
+    
     # Run risk-aware optimization
-    risk_aware_individual, risk_stocks, risk_current_prices, risk_predicted_prices, risk_dividend_yields, risk_expense_ratios, risk_tickers = _run_genetic_algorithm(
-        stocks, budget, max_per_etf_budget, include_risk=True
+    risk_aware_individual, risk_stocks, risk_current_prices, risk_predicted_prices, risk_dividend_yields, risk_expense_ratios, risk_tickers = _run_genetic_algorithm_with_map(
+        stocks, budget, max_per_etf_budget, etf_map, include_risk=True
     )
     
     # Run profit-only optimization
-    profit_only_individual, profit_stocks, profit_current_prices, profit_predicted_prices, profit_dividend_yields, profit_expense_ratios, profit_tickers = _run_genetic_algorithm(
-        stocks, budget, max_per_etf_budget, include_risk=False
+    profit_only_individual, profit_stocks, profit_current_prices, profit_predicted_prices, profit_dividend_yields, profit_expense_ratios, profit_tickers = _run_genetic_algorithm_with_map(
+        stocks, budget, max_per_etf_budget, etf_map, include_risk=False
     )
     
     # Format both results
