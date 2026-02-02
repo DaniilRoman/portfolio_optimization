@@ -271,9 +271,9 @@ def _create_evaluator_factory(
     
     def evaluate_func(individual):
         # Calculate cost and predicted profit
-        cost = sum(x * y for x, y in zip(current_prices, individual))
+        total_cost = sum(x * y for x, y in zip(current_prices, individual))
         
-        # Calculate net profit per stock: (capital_gain + dividend_income) * (1 - expense_ratio)
+        # Calculate net profit per stock: (capital_gain + dividend_income) - (cost * expense_ratio)
         total_net_profit = 0.0
         for i, shares in enumerate(individual):
             if shares == 0:
@@ -291,22 +291,27 @@ def _create_evaluator_factory(
             # Dividend income (assuming annual yield)
             dividend_income = current_price * dividend_yield * shares
             
+            # Total cost of investment
+            cost = current_price * shares
+            
             # Total gross profit
             gross_profit = capital_gain + dividend_income
             
-            # Apply expense ratio penalty (net after fees)
-            net_profit = gross_profit * (1 - expense_ratio)
+            # Apply expense ratio penalty (annual fee on assets under management)
+            # Expense reduces profit: fee = cost * expense_ratio
+            expense_fee = cost * expense_ratio
+            net_profit = gross_profit - expense_fee
             
             # Apply ownership weight for diversification
             weighted_profit = net_profit * ownership_weight
             total_net_profit += weighted_profit
         
         # Penalize if cost exceeds budget
-        if cost > budget:
+        if total_cost > budget:
             # Heavy penalty for exceeding budget
             return 100000000000, -10000000000
         
-        budget_deviation = abs(budget - cost)
+        budget_deviation = abs(budget - total_cost)
         if include_risk:
             # Calculate risk components
             volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
@@ -410,9 +415,11 @@ def _format_portfolio_results(
             capital_gain = (predicted_prices[i] - current_prices[i]) * shares
             dividend_income = current_prices[i] * dividend_yields[i] * shares
             gross_profit = capital_gain + dividend_income
-            net_profit = gross_profit * (1 - expense_ratios[i])
+            # Expense reduces profit: fee = cost * expense_ratio
+            expense_fee = cost * expense_ratios[i]
+            net_profit = gross_profit - expense_fee
             stock_name = stocks[i].stock_name
-            results.append((ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratios[i]))
+            results.append((ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratios[i], expense_fee))
     
     # Sort by net profit descending
     results.sort(key=lambda x: x[4], reverse=True)
@@ -425,12 +432,12 @@ def _format_portfolio_results(
     total_net_profit = sum(r[4] for r in results)
     total_capital_gain = sum(r[5] for r in results)
     total_dividend_income = sum(r[6] for r in results)
+    total_expense_fee = sum(r[8] for r in results)
     
     message_lines = []
     
-    for ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio in results:
+    for ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio, expense_fee in results:
         net_profit_percentage = (net_profit / cost * 100) if cost > 0 else 0
-        expense_amount = (capital_gain + dividend_income) * expense_ratio
         
         message_lines.append(f"• *{ticker}*: {shares} shares")
         message_lines.append(f"  {stock_name}")
@@ -438,13 +445,14 @@ def _format_portfolio_results(
         message_lines.append(f"  Net Profit: €{net_profit:.2f} ({net_profit_percentage:.1f}%)")
         message_lines.append(f"    - Capital Gain: €{capital_gain:.2f}")
         message_lines.append(f"    - Dividend Income: €{dividend_income:.2f}")
-        message_lines.append(f"    - Expenses ({(expense_ratio*100):.2f}%): €{expense_amount:.2f}")
+        message_lines.append(f"    - Expenses ({(expense_ratio*100):.2f}%): €{expense_fee:.2f}")
         message_lines.append("")
     
     message_lines.append(f"💰 *Total Investment:* €{total_cost:.2f}")
     message_lines.append(f"📈 *Total Net Profit:* €{total_net_profit:.2f}")
     message_lines.append(f"   - Capital Gains: €{total_capital_gain:.2f}")
     message_lines.append(f"   - Dividend Income: €{total_dividend_income:.2f}")
+    message_lines.append(f"   - Total Expenses: €{total_expense_fee:.2f}")
     message_lines.append(f"   - Total Gross Profit: €{(total_capital_gain + total_dividend_income):.2f}")
     
     # Always calculate and display risk metrics, regardless of whether they were used in optimization
