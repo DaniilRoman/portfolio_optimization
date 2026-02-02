@@ -92,6 +92,13 @@ def __calculate_volatility_risk(individual, stocks, current_prices):
         weight = etf_value / total_value
         std_dev = stocks[i].standard_deviation
         
+        # If standard deviation is 0 or not available, use beta as fallback
+        if std_dev <= 0:
+            # Use beta as proxy for volatility (beta * market_volatility)
+            # Assume market volatility of 0.15 (15% annualized)
+            market_volatility = 0.15
+            std_dev = stocks[i].beta * market_volatility
+        
         # Standard deviation is already annualized (from yfinance)
         weighted_volatility += weight * std_dev
     
@@ -321,7 +328,7 @@ def _create_evaluator_factory(
             # Combined risk score with weights: 40% volatility, 35% sector, 25% overlap
             # Scale risk to be comparable to profit values (profit is in euros, risk is 0-1 scale)
             # Multiply by a scaling factor to make risk matter more in the optimization
-            risk_scaling_factor = 100.0  # Scale risk to be comparable to profit values
+            risk_scaling_factor = 20.0  # Reduced from 100.0 to better balance profit vs risk
             total_risk = risk_scaling_factor * (
                 0.25 * volatility_risk +
                 0.4 * sector_risk +
