@@ -52,6 +52,11 @@ def __clean_artifacts(analyses_result: StockData):
 
 def __toSkip(stock_info: StockInfo) -> bool:
     return False  # TODO disable skipping for selected ETFs
+    
+    # Skip stocks that are too expensive or are S&P 500 ETFs (which are already well-covered)
     # name = stock_info.ticker.info.get('longName', '')
-    # price = stock_info.ticker.info['open']
-    # return 'S&P' in name or price > 100
+    # price = stock_info.ticker.info.get('open', 0)
+    
+    # Skip if price is too high (over 100 EUR) or if it's an S&P 500 ETF
+    # This helps focus on more affordable and niche ETFs
+    # return price > 100 or 'S&P' in name

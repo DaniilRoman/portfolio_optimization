@@ -11,8 +11,15 @@ class ProfitabilityData:
     operating_margins: float
 
     def is_profitable(self) -> bool:
-        # TODO tmp fix (remove a zero check from condition)
-        return self.trailing_eps >= 0 and self.forward_eps >= 0 and self.netIncome_to_common >= 0 and self.ebitda_margins >= 0 and self.operating_margins >= 0
+        # Check if the company is profitable based on key metrics
+        # A company is considered profitable if it has positive earnings and margins
+        # We check trailing EPS and forward EPS for earnings, and margins for profitability
+        has_positive_earnings = self.trailing_eps > 0 or self.forward_eps > 0
+        has_positive_net_income = self.netIncome_to_common > 0
+        has_positive_margins = self.ebitda_margins > 0 or self.operating_margins > 0
+        
+        # Company is profitable if it has positive earnings OR positive net income AND at least one positive margin
+        return (has_positive_earnings or has_positive_net_income) and has_positive_margins
 
 @dataclass
 class StockData:

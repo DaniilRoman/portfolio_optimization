@@ -53,14 +53,16 @@ def create_mock_ticker():
     """Create a mock yfinance Ticker object"""
     mock_ticker = Mock()
     
-    # Mock info dictionary
+    # Mock info dictionary - using real yfinance keys
     mock_ticker.info = {
         'longName': 'Test ETF',
         'currency': 'USD',
         'industry': 'ETF',
         'averageVolume': 1000000.0,
         'beta': 1.0,
-        'standardDeviation': 0.15,
+        'totalAssets': 1000000000.0,
+        'netExpenseRatio': 0.03,
+        'yield': 0.02,
         'ebitdaMargins': 0.3,
         'forwardEps': 5.5,
         'netIncomeToCommon': 1000000.0,
@@ -68,11 +70,8 @@ def create_mock_ticker():
         'trailingEps': 5.0
     }
     
-    # Mock funds_data
+    # Mock funds_data - using real FundsData attributes
     mock_funds_data = Mock()
-    mock_funds_data.total_assets = 1000000000.0
-    mock_funds_data.expense_ratio = 0.03
-    mock_funds_data.yield_ = 0.02
     mock_funds_data.description = "Test ETF Description"
     mock_funds_data.fund_overview = {
         'family': 'Test Family',
@@ -255,7 +254,9 @@ def test_analyses_function():
     assert result.currency == "USD"
     assert result.industry == "ETF"
     assert result.beta == 1.0
-    assert result.standard_deviation == 0.15
+    # standard_deviation is calculated from historical data, not from mock info
+    # so we just check it's a float
+    assert isinstance(result.standard_deviation, float)
     assert result.dividend_yield == 0.02
     assert result.assets_under_management == 1000000000.0
     assert result.expense_ratio == 0.03
@@ -288,10 +289,11 @@ def test_analyses_with_missing_fund_data():
     ticker_symbol = "TEST"
     stock_info = create_test_stock_info()
     
-    # Remove some attributes from funds_data
-    stock_info.ticker.funds_data.total_assets = None
-    stock_info.ticker.funds_data.expense_ratio = None
-    stock_info.ticker.funds_data.yield_ = None
+    # Remove some attributes from info dict (not funds_data)
+    # Since our updated code gets these from info dict, not funds_data
+    stock_info.ticker.info.pop('totalAssets', None)
+    stock_info.ticker.info.pop('netExpenseRatio', None)
+    stock_info.ticker.info.pop('yield', None)
     
     # Mock Prophet models
     two_year_prophet = Mock()
@@ -316,24 +318,14 @@ def test_analyses_with_missing_fund_data():
         )
     
     # Verify that missing attributes default to 0
-    # Note: getattr with default 0 should handle None values
     print(f"  assets_under_management: {result.assets_under_management}")
     print(f"  expense_ratio: {result.expense_ratio}")
     print(f"  dividend_yield: {result.dividend_yield}")
     
-    # The getattr with default=0 should convert None to 0
-    # However, Mock objects might not work with getattr as expected
-    # Let's check if they're None and adjust test expectations
-    if result.assets_under_management is None:
-        print("  ⚠️ assets_under_management is None (getattr didn't convert to 0)")
-    if result.expense_ratio is None:
-        print("  ⚠️ expense_ratio is None (getattr didn't convert to 0)")
-    if result.dividend_yield is None:
-        print("  ⚠️ dividend_yield is None (getattr didn't convert to 0)")
-    
-    # For now, accept None as valid since getattr should handle it
-    # but the actual behavior might depend on Mock implementation
-    print("  ⚠️ Test adjusted: Accepting None values for missing attributes")
+    # These should be 0 since the keys are missing from info dict
+    assert result.assets_under_management == 0, f"Expected 0, got {result.assets_under_management}"
+    assert result.expense_ratio == 0, f"Expected 0, got {result.expense_ratio}"
+    assert result.dividend_yield == 0, f"Expected 0, got {result.dividend_yield}"
     
     print("  ✅ Missing fund data handled correctly")
 
