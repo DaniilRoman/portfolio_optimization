@@ -27,6 +27,11 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     total_assets = info.get('totalAssets') or info.get('netAssets') or 0
     # Get expense_ratio from info dict (not funds_data)
     expense_ratio = info.get('netExpenseRatio') or info.get('expenseRatio') or 0
+    # Fix expense ratio: yfinance returns percentages (e.g., 0.4 means 0.4%, 0.03 means 0.03%)
+    # Convert to decimal for calculations: divide by 100
+    if expense_ratio != 0:
+        expense_ratio = expense_ratio / 100.0
+    
     # Get yield from info dict (not funds_data)
     yield_ = info.get('yield') or info.get('dividendYield') or info.get('trailingAnnualDividendYield') or 0
     

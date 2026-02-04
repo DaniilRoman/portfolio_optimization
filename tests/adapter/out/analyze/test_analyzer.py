@@ -54,6 +54,8 @@ def create_mock_ticker():
     mock_ticker = Mock()
     
     # Mock info dictionary - using real yfinance keys
+    # Note: yfinance returns expense ratio as percentage (e.g., 0.03 for 0.03%)
+    # The analyzer divides by 100 to convert to decimal
     mock_ticker.info = {
         'longName': 'Test ETF',
         'currency': 'USD',
@@ -61,7 +63,7 @@ def create_mock_ticker():
         'averageVolume': 1000000.0,
         'beta': 1.0,
         'totalAssets': 1000000000.0,
-        'netExpenseRatio': 0.03,
+        'netExpenseRatio': 0.03,  # 0.03% expense ratio
         'yield': 0.02,
         'ebitdaMargins': 0.3,
         'forwardEps': 5.5,
@@ -259,7 +261,8 @@ def test_analyses_function():
     assert isinstance(result.standard_deviation, float)
     assert result.dividend_yield == 0.02
     assert result.assets_under_management == 1000000000.0
-    assert result.expense_ratio == 0.03
+    # expense_ratio is now divided by 100 in analyzer (0.03% -> 0.0003)
+    assert result.expense_ratio == 0.0003
     
     # Verify profitability data
     assert isinstance(result.profitability_data, ProfitabilityData)
