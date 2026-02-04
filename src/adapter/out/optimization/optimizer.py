@@ -74,7 +74,7 @@ def __evaluate(individual, predicted_prices, prices, budget):
 
 def __calculate_volatility_risk(individual, stocks, current_prices):
     """
-    Calculate portfolio volatility risk using ETF standard deviations.
+    Calculate portfolio volatility risk using ETF standard deviations and prediction uncertainty.
     Returns normalized risk score (higher = more volatile = worse).
     """
     total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
@@ -82,14 +82,18 @@ def __calculate_volatility_risk(individual, stocks, current_prices):
     if total_value == 0:
         return 0.0
     
-    # Calculate weighted average of ETF standard deviations
+    # Calculate weighted average of ETF standard deviations and prediction uncertainty
     weighted_volatility = 0.0
+    weighted_prediction_uncertainty = 0.0
+    
     for i, shares in enumerate(individual):
         if shares == 0:
             continue
         
         etf_value = shares * current_prices[i]
         weight = etf_value / total_value
+        
+        # Historical volatility (standard deviation)
         std_dev = stocks[i].standard_deviation
         
         # If standard deviation is 0 or not available, use beta as fallback
@@ -101,8 +105,22 @@ def __calculate_volatility_risk(individual, stocks, current_prices):
         
         # Standard deviation is already annualized (from yfinance)
         weighted_volatility += weight * std_dev
+        
+        # Prediction uncertainty (from Prophet forecast)
+        # Convert absolute uncertainty to relative uncertainty (uncertainty / current_price)
+        if current_prices[i] > 0:
+            relative_uncertainty = stocks[i].prediction_uncertainty / current_prices[i]
+        else:
+            relative_uncertainty = 0.0
+        
+        weighted_prediction_uncertainty += weight * relative_uncertainty
     
-    return weighted_volatility
+    # Combine historical volatility and prediction uncertainty
+    # Weight: 70% historical volatility, 30% prediction uncertainty
+    # This gives more weight to historical data but incorporates forecast confidence
+    combined_risk = (0.7 * weighted_volatility) + (0.3 * weighted_prediction_uncertainty)
+    
+    return combined_risk
 
 
 def __calculate_sector_concentration_risk(individual, stocks, current_prices):

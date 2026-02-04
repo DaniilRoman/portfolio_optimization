@@ -42,6 +42,7 @@ class StockData:
     assets_under_management: float
     expense_ratio: float
     description: str
+    prediction_uncertainty: float = 0.0  # New: uncertainty range from Prophet forecast
 
 
 @dataclass

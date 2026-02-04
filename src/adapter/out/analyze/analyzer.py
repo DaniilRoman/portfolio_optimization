@@ -9,6 +9,16 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     current_price = __last_price(stock_info.historic_data, "y")
     two_year_last_predicted_price = __last_price(two_year_predicted_prices, "yhat")
     five_year_last_predicted_price = __last_price(five_year_predicted_prices, "yhat")
+    
+    # Extract prediction uncertainty (average uncertainty range for the forecast period)
+    # We'll use the average uncertainty from the two-year forecast as it's more relevant for optimization
+    if 'uncertainty_range' in two_year_predicted_prices.columns:
+        # Get uncertainty for the forecast period (last 90 days for two-year prediction)
+        forecast_period = min(90, len(two_year_predicted_prices))
+        forecast_uncertainty = two_year_predicted_prices['uncertainty_range'].tail(forecast_period).mean()
+    else:
+        forecast_uncertainty = 0.0
+    
     is_stock_growing = __is_stock_growing(current_price, two_year_last_predicted_price, five_year_last_predicted_price, stock_info.historic_data)
     
     two_year_prophet.plot(two_year_predicted_prices)
@@ -84,7 +94,8 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         standard_deviation=standard_deviation,
         dividend_yield=yield_,
         assets_under_management=total_assets,
-        expense_ratio=expense_ratio
+        expense_ratio=expense_ratio,
+        prediction_uncertainty=forecast_uncertainty
     )
 
 
