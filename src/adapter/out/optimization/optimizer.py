@@ -309,9 +309,24 @@ def _create_evaluator_factory(
             dividend_yield = dividend_yields[i]
             expense_ratio = expense_ratios[i]
             ownership_weight = ownership_weights[i]
+            prediction_uncertainty = stocks[i].prediction_uncertainty
             
-            # Capital gain from price appreciation
-            capital_gain = (predicted_price - current_price) * shares
+            # UNCERTAINTY-ADJUSTED CAPITAL GAIN
+            # Discount predicted gain by uncertainty (more uncertainty = less reliable prediction)
+            if predicted_price > 0 and prediction_uncertainty > 0:
+                # Calculate relative uncertainty (uncertainty as percentage of predicted price)
+                relative_uncertainty = prediction_uncertainty / predicted_price
+                # Cap uncertainty at 50% to avoid extreme discounts
+                capped_uncertainty = min(relative_uncertainty, 0.5)
+                # Confidence score: 1.0 = perfect confidence, 0.5 = 50% uncertainty
+                confidence_score = 1.0 - capped_uncertainty
+            else:
+                confidence_score = 1.0  # No uncertainty data, use full prediction
+            
+            # Apply confidence score to capital gain prediction
+            # This reduces the expected gain for uncertain predictions
+            expected_gain = (predicted_price - current_price) * confidence_score
+            capital_gain = expected_gain * shares
             
             # Dividend income (assuming annual yield)
             dividend_income = current_price * dividend_yield * shares
@@ -436,15 +451,31 @@ def _format_portfolio_results(
     for i, (ticker, shares) in enumerate(zip(tickers, best_individual)):
         if shares > 0:
             cost = shares * current_prices[i]
-            # Calculate detailed profit breakdown
-            capital_gain = (predicted_prices[i] - current_prices[i]) * shares
+            
+            # Calculate uncertainty-adjusted capital gain (same logic as in evaluator)
+            prediction_uncertainty = stocks[i].prediction_uncertainty
+            if predicted_prices[i] > 0 and prediction_uncertainty > 0:
+                relative_uncertainty = prediction_uncertainty / predicted_prices[i]
+                capped_uncertainty = min(relative_uncertainty, 0.5)
+                confidence_score = 1.0 - capped_uncertainty
+            else:
+                confidence_score = 1.0
+            
+            expected_gain = (predicted_prices[i] - current_prices[i]) * confidence_score
+            capital_gain = expected_gain * shares
+            raw_capital_gain = (predicted_prices[i] - current_prices[i]) * shares
+            
             dividend_income = current_prices[i] * dividend_yields[i] * shares
             gross_profit = capital_gain + dividend_income
             # Expense reduces profit: fee = cost * expense_ratio
             expense_fee = cost * expense_ratios[i]
             net_profit = gross_profit - expense_fee
             stock_name = stocks[i].stock_name
-            results.append((ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratios[i], expense_fee))
+            
+            # Store both adjusted and raw capital gain for display
+            results.append((ticker, stock_name, shares, cost, net_profit, capital_gain, 
+                           raw_capital_gain, dividend_income, expense_ratios[i], expense_fee, 
+                           confidence_score, prediction_uncertainty))
     
     # Sort by net profit descending
     results.sort(key=lambda x: x[4], reverse=True)
@@ -461,16 +492,20 @@ def _format_portfolio_results(
     
     message_lines = []
     
-    for ticker, stock_name, shares, cost, net_profit, capital_gain, dividend_income, expense_ratio, expense_fee in results:
+    for ticker, stock_name, shares, cost, net_profit, capital_gain, raw_capital_gain, dividend_income, expense_ratio, expense_fee, confidence_score, prediction_uncertainty in results:
         net_profit_percentage = (net_profit / cost * 100) if cost > 0 else 0
         
         message_lines.append(f"• *{ticker}*: {shares} shares")
         message_lines.append(f"  {stock_name}")
         message_lines.append(f"  Cost: €{cost:.2f}")
         message_lines.append(f"  Net Profit: €{net_profit:.2f} ({net_profit_percentage:.1f}%)")
-        message_lines.append(f"    - Capital Gain: €{capital_gain:.2f}")
+        message_lines.append(f"    - Capital Gain (uncertainty-adjusted): €{capital_gain:.2f}")
+        if confidence_score < 1.0:
+            message_lines.append(f"      (Raw prediction: €{raw_capital_gain:.2f}, Confidence: {confidence_score:.2f})")
         message_lines.append(f"    - Dividend Income: €{dividend_income:.2f}")
         message_lines.append(f"    - Expenses ({(expense_ratio*100):.2f}%): €{expense_fee:.2f}")
+        if prediction_uncertainty > 0:
+            message_lines.append(f"    - Prediction Uncertainty: €{prediction_uncertainty:.2f}")
         message_lines.append("")
     
     message_lines.append(f"💰 *Total Investment:* €{total_cost:.2f}")
