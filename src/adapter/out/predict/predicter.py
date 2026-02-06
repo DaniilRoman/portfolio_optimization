@@ -8,9 +8,9 @@ from typing import Tuple, Optional
 def predict(
     data: DataFrame, 
     predict_period: int = 30,
-    seasonality_mode: str = 'multiplicative',
+    seasonality_mode: str = 'additive',
     changepoint_prior_scale: float = 0.05,
-    seasonality_prior_scale: float = 10.0,
+    seasonality_prior_scale: float = 0.1,
     holidays_prior_scale: float = 10.0,
     mcmc_samples: int = 0,
     interval_width: float = 0.95,
@@ -67,27 +67,27 @@ def predict(
     if add_holidays:
         prophet.add_country_holidays(country_name='US')
     
-    # Add quarterly seasonality for financial reporting cycles
-    prophet.add_seasonality(
-        name='quarterly',
-        period=365.25/4,
-        fourier_order=5,
-        prior_scale=seasonality_prior_scale
-    )
+    # # Add quarterly seasonality for financial reporting cycles
+    # prophet.add_seasonality(
+    #     name='quarterly',
+    #     period=365.25/4,
+    #     fourier_order=5,
+    #     prior_scale=seasonality_prior_scale
+    # )
     
-    # Add monthly seasonality for economic data releases
-    prophet.add_seasonality(
-        name='monthly',
-        period=30.5,
-        fourier_order=3,
-        prior_scale=seasonality_prior_scale
-    )
+    # # Add monthly seasonality for economic data releases
+    # prophet.add_seasonality(
+    #     name='monthly',
+    #     period=30.5,
+    #     fourier_order=3,
+    #     prior_scale=seasonality_prior_scale
+    # )
     
     # Fit the model
     prophet.fit(data)
     
     # Create future dataframe
-    future = prophet.make_future_dataframe(periods=predict_period, freq='D')
+    future = prophet.make_future_dataframe(periods=predict_period, freq='B')
     
     # Make predictions
     forecast = prophet.predict(future)
