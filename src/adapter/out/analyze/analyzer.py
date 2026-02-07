@@ -10,6 +10,8 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     two_year_last_predicted_price = __last_price(two_year_predicted_prices, "yhat")
     five_year_last_predicted_price = __last_price(five_year_predicted_prices, "yhat")
     
+    predict_price = __predicted_price(two_year_predicted_prices, five_year_predicted_prices)
+    
     # Extract prediction uncertainty (average uncertainty range for the forecast period)
     # We'll use the average uncertainty from the two-year forecast as it's more relevant for optimization
     if 'uncertainty_range' in two_year_predicted_prices.columns:
@@ -79,7 +81,7 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         stock_name=info.get('longName') or 'Unknown',
         currency=info.get('currency') or 'Unknown',
         current_price=current_price, 
-        predict_price=two_year_last_predicted_price,
+        predict_price=predict_price,
         two_year_file_name=two_year_file_name,
         five_year_file_name=five_year_file_name,
         is_stock_growing=is_stock_growing,
@@ -97,7 +99,15 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         expense_ratio=expense_ratio,
         prediction_uncertainty=forecast_uncertainty
     )
-
+    
+def __predicted_price(two_year_predicted_prices: pd.DataFrame, five_year_predicted_prices: pd.DataFrame) -> float:
+    # Extract minimum predicted values (pessimistic approach)
+    # Use yhat_lower for minimum confidence bound
+    two_year_min_predicted_price = __last_price(two_year_predicted_prices, "yhat_lower")
+    five_year_min_predicted_price = __last_price(five_year_predicted_prices, "yhat_lower")
+    
+    # Take the minimum of both minimum predicted values as final predicted price
+    return min(two_year_min_predicted_price, five_year_min_predicted_price)
 
 def __is_stock_growing(current_price: float, two_year_last_predicted_price: float, five_year_last_predicted_price: float, historic_data: pd.DataFrame) -> bool:
     month_2_years_ago = __slice(historic_data, 365 * 2, 30)

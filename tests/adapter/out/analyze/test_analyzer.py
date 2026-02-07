@@ -371,6 +371,119 @@ def test_analyses_with_exception_in_description():
     
     print("  ✅ Exception in description generation handled correctly")
 
+def test_pessimistic_predict_price_calculation():
+    """Test the new pessimistic predict_price calculation"""
+    print("Testing pessimistic predict_price calculation...")
+    
+    # Create test data
+    ticker_symbol = "TEST"
+    stock_info = create_test_stock_info()
+    
+    # Mock Prophet models
+    two_year_prophet = Mock()
+    five_year_prophet = Mock()
+    
+    # Create predicted prices with known values for testing
+    # We'll create simple DataFrames with known last values
+    future_dates = pd.date_range(start=datetime.now(), periods=10, freq='D')
+    
+    # Create two-year predictions: yhat=200, yhat_lower=195 (5 less)
+    two_year_predicted_prices = pd.DataFrame({
+        'yhat': [200.0] * 10,
+        'yhat_lower': [195.0] * 10,
+        'yhat_upper': [205.0] * 10
+    }, index=future_dates)
+    
+    # Create five-year predictions: yhat=210, yhat_lower=205 (5 less)
+    five_year_predicted_prices = pd.DataFrame({
+        'yhat': [210.0] * 10,
+        'yhat_lower': [205.0] * 10,
+        'yhat_upper': [215.0] * 10
+    }, index=future_dates)
+    
+    # Mock the plot and savefig functions
+    with patch('matplotlib.pyplot.savefig') as mock_savefig, \
+         patch('matplotlib.pyplot.figure') as mock_figure:
+        
+        # Call the analyses function
+        result = analyzer.analyses(
+            ticker_symbol=ticker_symbol,
+            stock_info=stock_info,
+            two_year_prophet=two_year_prophet,
+            two_year_predicted_prices=two_year_predicted_prices,
+            five_year_prophet=five_year_prophet,
+            five_year_predicted_prices=five_year_predicted_prices
+        )
+    
+    # Verify the predict_price is the minimum of the two yhat_lower values
+    # two_year_min = 195.0, five_year_min = 205.0, min = 195.0
+    expected_predict_price = 195.0
+    actual_predict_price = result.predict_price
+    
+    print(f"  Expected predict_price: {expected_predict_price}")
+    print(f"  Actual predict_price: {actual_predict_price}")
+    
+    assert round(actual_predict_price, 2) == round(expected_predict_price, 2), \
+        f"Expected predict_price {expected_predict_price}, got {actual_predict_price}"
+    
+    print("  ✅ Pessimistic predict_price calculation test passed")
+
+def test_pessimistic_predict_price_with_different_values():
+    """Test pessimistic calculation when five-year minimum is lower"""
+    print("Testing pessimistic predict_price with different values...")
+    
+    # Create test data
+    ticker_symbol = "TEST"
+    stock_info = create_test_stock_info()
+    
+    # Mock Prophet models
+    two_year_prophet = Mock()
+    five_year_prophet = Mock()
+    
+    # Create predicted prices with five-year minimum being lower
+    future_dates = pd.date_range(start=datetime.now(), periods=10, freq='D')
+    
+    # Create two-year predictions: yhat_lower=200
+    two_year_predicted_prices = pd.DataFrame({
+        'yhat': [205.0] * 10,
+        'yhat_lower': [200.0] * 10,
+        'yhat_upper': [210.0] * 10
+    }, index=future_dates)
+    
+    # Create five-year predictions: yhat_lower=190 (lower than two-year)
+    five_year_predicted_prices = pd.DataFrame({
+        'yhat': [195.0] * 10,
+        'yhat_lower': [190.0] * 10,
+        'yhat_upper': [200.0] * 10
+    }, index=future_dates)
+    
+    # Mock the plot and savefig functions
+    with patch('matplotlib.pyplot.savefig') as mock_savefig, \
+         patch('matplotlib.pyplot.figure') as mock_figure:
+        
+        # Call the analyses function
+        result = analyzer.analyses(
+            ticker_symbol=ticker_symbol,
+            stock_info=stock_info,
+            two_year_prophet=two_year_prophet,
+            two_year_predicted_prices=two_year_predicted_prices,
+            five_year_prophet=five_year_prophet,
+            five_year_predicted_prices=five_year_predicted_prices
+        )
+    
+    # Verify the predict_price is the minimum of the two yhat_lower values
+    # two_year_min = 200.0, five_year_min = 190.0, min = 190.0
+    expected_predict_price = 190.0
+    actual_predict_price = result.predict_price
+    
+    print(f"  Expected predict_price: {expected_predict_price}")
+    print(f"  Actual predict_price: {actual_predict_price}")
+    
+    assert round(actual_predict_price, 2) == round(expected_predict_price, 2), \
+        f"Expected predict_price {expected_predict_price}, got {actual_predict_price}"
+    
+    print("  ✅ Pessimistic predict_price with different values test passed")
+
 def run_all_tests():
     """Run all analyzer tests"""
     print("=" * 60)
@@ -397,6 +510,12 @@ def run_all_tests():
         print()
         
         test_analyses_with_exception_in_description()
+        print()
+        
+        test_pessimistic_predict_price_calculation()
+        print()
+        
+        test_pessimistic_predict_price_with_different_values()
         print()
         
         print("=" * 60)
