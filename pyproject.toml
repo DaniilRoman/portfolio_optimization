@@ -14,10 +14,10 @@ telepot = "^12.7"
 python-decouple = "^3.8"
 beautifulsoup4 = "^4.14.3"
 deap = "^1.4.3"
-numpy = "^2.4.1"
+numpy = "^2.4.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
+pytest = "^9.0.2"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
