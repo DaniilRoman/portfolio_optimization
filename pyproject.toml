@@ -15,6 +15,7 @@ python-decouple = "^3.8"
 beautifulsoup4 = "^4.14.3"
 deap = "^1.4.3"
 numpy = "^2.4.1"
+cvxpy = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -33,4 +34,3 @@ include = "src"
 
 [[tool.poetry.packages]]
 include = "config"
-
