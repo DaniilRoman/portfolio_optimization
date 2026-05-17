@@ -1,28 +1,15 @@
-import requests
-import config.configuration as configuration
-from deap import base, creator, tools, algorithms
-from deap.base import Toolbox
-from typing import List, Dict, Tuple, Any, Callable
 import random
-import numpy as np
+from collections.abc import Callable
 
-# CXPB  is the probability with which two individuals are crossed
-# MUTPB is the probability for mutating an individual
+import requests
+from deap import algorithms, base, creator, tools
+from deap.base import Toolbox
+
+from config.configuration import settings
 from src.logic.data.data import StockData
 
-# Recommended GA parameters for 20 ETFs portfolio optimization
-CXPB = 0.35  # Crossover probability
-MUTPB = 0.55  # Mutation probability
-NUMBER_OF_ITERATIONS = 350  # Increased number of generations for better convergence
-NUMBER_OF_POPULATION = 120  # Increased population size for better search space coverage
-TOURNSIZE = 5  # Increased tournament size for better selection pressure
-MUTATION_INDPB = 0.4  # Probability of each gene to be mutated
-MATE_INDPB = 0.1  # Probability of each gene to be exchanged during crossover
-MAX_SECTOR_CONCENTRATION = 0.40  # Max 40% in any single sector
-# For risk-aware: minimize deviation, maximize (profit - risk_penalty)
-# For profit-only: minimize deviation, maximize profit
-FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0)  # min deviation, max adjusted_profit
-FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0)  # min deviation, max profit
+FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0)
+FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0)
 
 
 def __gen_one_individual(max_count_data, current_prices=None, budget=None):
@@ -64,8 +51,8 @@ def __gen_one_individual(max_count_data, current_prices=None, budget=None):
 
 
 def __evaluate(individual, predicted_prices, prices, budget):
-    predicted_cost = sum(x * y for x, y in zip(predicted_prices, individual))
-    cost = sum(x * y for x, y in zip(prices, individual))
+    predicted_cost = sum(x * y for x, y in zip(predicted_prices, individual, strict=False))
+    cost = sum(x * y for x, y in zip(prices, individual, strict=False))
 
     if cost > budget:
         return 100000000000, -10000000000
@@ -157,7 +144,7 @@ def __calculate_sector_concentration_risk(individual, stocks, current_prices):
     herfindahl = sum(exp**2 for exp in sector_exposure.values())
     
     # Penalty for exceeding max concentration
-    excess_concentration = max(0, max_sector_exposure - MAX_SECTOR_CONCENTRATION)
+    excess_concentration = max(0, max_sector_exposure - settings.ga.max_sector_concentration)
     
     # Combined risk score (normalized to 0-1 scale)
     concentration_risk = (herfindahl + excess_concentration * 10)
@@ -225,22 +212,22 @@ def __create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:
 
     toolbox = Toolbox()
     toolbox.register("evaluate", eval_func)    
-    toolbox.register("mate", tools.cxUniform, indpb=MATE_INDPB)
-    toolbox.register("mutate", mutFlipBit, indpb=MUTATION_INDPB)
-    toolbox.register("select", tools.selTournament, tournsize=TOURNSIZE)  # Increased for better selection pressure
+    toolbox.register("mate", tools.cxUniform, indpb=settings.ga.mate_indpb)
+    toolbox.register("mutate", mutFlipBit, indpb=settings.ga.mutation_indpb)
+    toolbox.register("select", tools.selTournament, tournsize=settings.ga.tournament_size)
     return toolbox
 
 
 def __optimize_internal(toolbox, gen_individual_func):
-    pop = [creator.Individual(gen_individual_func()) for i in range(NUMBER_OF_POPULATION)]
+    pop = [creator.Individual(gen_individual_func()) for i in range(settings.ga.population)]
     fitnesses = list(map(toolbox.evaluate, pop))
-    for ind, fit in zip(pop, fitnesses):
+    for ind, fit in zip(pop, fitnesses, strict=False):
         ind.fitness.values = fit
 
-    return algorithms.eaSimple(pop, toolbox, cxpb=CXPB, mutpb=MUTPB, ngen=NUMBER_OF_ITERATIONS)
+    return algorithms.eaSimple(pop, toolbox, cxpb=settings.ga.crossover_rate, mutpb=settings.ga.mutation_rate, ngen=settings.ga.generations)
 
 
-def _prepare_stock_data(stocks: List[StockData]):
+def _prepare_stock_data(stocks: list[StockData]):
     """Extract and prepare stock data for optimization."""
     tickers = [stock.ticker_symbol for stock in stocks]
     current_prices = [stock.current_price for stock in stocks]
@@ -251,7 +238,7 @@ def _prepare_stock_data(stocks: List[StockData]):
     return tickers, current_prices, predicted_prices, dividend_yields, expense_ratios
 
 
-def _calculate_max_shares(current_prices: List[float], max_per_etf_budget: float = 50.0):
+def _calculate_max_shares(current_prices: list[float], max_per_etf_budget: float = 50.0):
     """Calculate maximum shares per ETF based on budget constraints."""
     max_shares_per_stock = []
     for price in current_prices:
@@ -267,7 +254,7 @@ def _calculate_max_shares(current_prices: List[float], max_per_etf_budget: float
     return max_shares_per_stock
 
 
-def _create_ownership_weights(tickers: List[str], etf_map: Dict[str, int]):
+def _create_ownership_weights(tickers: list[str], etf_map: dict[str, int]):
     """Calculate diversification weights based on current ownership."""
     ownership_weights = []
     for ticker in tickers:
@@ -281,12 +268,12 @@ def _create_ownership_weights(tickers: List[str], etf_map: Dict[str, int]):
 
 
 def _create_evaluator_factory(
-    current_prices: List[float],
-    predicted_prices: List[float],
-    dividend_yields: List[float],
-    expense_ratios: List[float],
-    ownership_weights: List[float],
-    stocks: List[StockData],
+    current_prices: list[float],
+    predicted_prices: list[float],
+    dividend_yields: list[float],
+    expense_ratios: list[float],
+    ownership_weights: list[float],
+    stocks: list[StockData],
     budget: float,
     include_risk: bool = True
 ) -> Callable:
@@ -294,7 +281,7 @@ def _create_evaluator_factory(
     
     def evaluate_func(individual):
         # Calculate cost and predicted profit
-        total_cost = sum(x * y for x, y in zip(current_prices, individual))
+        total_cost = sum(x * y for x, y in zip(current_prices, individual, strict=False))
         
         # Calculate net profit per stock: (capital_gain + dividend_income) - (cost * expense_ratio)
         total_net_profit = 0.0
@@ -362,11 +349,11 @@ def _create_evaluator_factory(
 
 
 def _run_genetic_algorithm(
-    stocks: List[StockData],
+    stocks: list[StockData],
     budget: float,
     max_per_etf_budget: float,
     include_risk: bool = True
-) -> Tuple[List[int], List[StockData], List[float], List[float], List[float], List[float], List[float]]:
+) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     """Run genetic algorithm optimization with specified risk inclusion."""
     # Get current ETF ownership
     etf_map = __get_etf_map()
@@ -374,12 +361,12 @@ def _run_genetic_algorithm(
 
 
 def _run_genetic_algorithm_with_map(
-    stocks: List[StockData],
+    stocks: list[StockData],
     budget: float,
     max_per_etf_budget: float,
-    etf_map: Dict[str, int],
+    etf_map: dict[str, int],
     include_risk: bool = True
-) -> Tuple[List[int], List[StockData], List[float], List[float], List[float], List[float], List[float]]:
+) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     """Run genetic algorithm optimization with pre-fetched ETF ownership map."""
     # Prepare data
     tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
@@ -419,19 +406,19 @@ def _run_genetic_algorithm_with_map(
 
 
 def _format_portfolio_results(
-    best_individual: List[int],
-    stocks: List[StockData],
-    current_prices: List[float],
-    predicted_prices: List[float],
-    dividend_yields: List[float],
-    expense_ratios: List[float],
-    tickers: List[str],
+    best_individual: list[int],
+    stocks: list[StockData],
+    current_prices: list[float],
+    predicted_prices: list[float],
+    dividend_yields: list[float],
+    expense_ratios: list[float],
+    tickers: list[str],
     include_risk: bool = True
 ) -> str:
     """Format portfolio optimization results into a string."""
     # Format results: only include ETFs with positive share count
     results = []
-    for i, (ticker, shares) in enumerate(zip(tickers, best_individual)):
+    for i, (ticker, shares) in enumerate(zip(tickers, best_individual, strict=False)):
         if shares > 0:
             cost = shares * current_prices[i]
 
@@ -492,7 +479,7 @@ def _format_portfolio_results(
     final_overlap_risk = __calculate_company_overlap_risk(best_individual, stocks, current_prices)
     
     message_lines.append("")
-    message_lines.append(f"⚠️ *Risk Metrics:*")
+    message_lines.append("⚠️ *Risk Metrics:*")
     message_lines.append(f"   - Volatility: {(final_volatility*100):.1f}%")
     message_lines.append(f"   - Sector Concentration: {final_sector_risk:.3f}")
     message_lines.append(f"   - Company Overlap: {final_overlap_risk:.3f}")
@@ -500,7 +487,7 @@ def _format_portfolio_results(
     return "\n".join(message_lines)
 
 
-def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
+def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
     """
     Optimize portfolio to suggest what ETFs to buy next.
     
@@ -562,6 +549,6 @@ def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: 
     return "\n".join(message_lines)
 
 def __get_etf_map():
-    etf_to_count = requests.get(configuration.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})    
+    etf_to_count = requests.get(settings.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})    
     return etf_to_count.json()
   

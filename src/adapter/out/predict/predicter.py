@@ -1,28 +1,24 @@
 """Predicter dispatcher.
 
 Routes ``predict`` calls to the GARCH or Prophet backend based on
-``config.configuration.PREDICTER`` (env var ``PREDICTER``: "garch" | "prophet").
-Both backends share the same return contract: ``(model, forecast_df)`` where
-the model exposes ``.plot(forecast_df)`` and the DataFrame carries
+``PREDICTER`` setting (env var ``PREDICTER``: "garch" | "prophet").
+Both backends return a :class:`~src.logic.data.forecast.Forecast` carrying
 ``ds``, ``yhat``, ``yhat_lower``, ``yhat_upper``, ``uncertainty_range``,
-``volatility_forecast``.
+``volatility_forecast`` and a ``model`` that exposes ``.plot(df)``.
 """
 
-from typing import Any, Tuple
+import pandas as pd
 
-from pandas import DataFrame
+from config.configuration import settings
+from src.logic.data.forecast import Forecast
 
-import config.configuration as configuration
 
-
-def predict(data: DataFrame, predict_period: int = 30, **kwargs) -> Tuple[Any, DataFrame]:
-    backend = (configuration.PREDICTER or "garch").lower()
+def predict(data: pd.DataFrame, predict_period: int = 30, **kwargs: object) -> Forecast:
+    backend = settings.PREDICTER.lower()
     if backend == "prophet":
-        from .predicter_prophet import predict as _predict
+        from .predicter_prophet import predict as _predict  # type: ignore[assignment]
     elif backend == "garch":
-        from .predicter_garch import predict as _predict
+        from .predicter_garch import predict as _predict  # type: ignore[assignment]
     else:
-        raise ValueError(
-            f"Unknown PREDICTER backend: {backend!r}. Expected 'garch' or 'prophet'."
-        )
-    return _predict(data, predict_period=predict_period, **kwargs)
+        raise ValueError(f"Unknown PREDICTER backend: {backend!r}. Expected 'garch' or 'prophet'.")
+    return _predict(data, predict_period=predict_period, **kwargs)  # type: ignore[arg-type]

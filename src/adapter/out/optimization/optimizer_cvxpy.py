@@ -1,36 +1,31 @@
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 import cvxpy as cp
 import numpy as np
 
+from config.configuration import settings
 from src.logic.data.data import StockData
+
 from .optimizer import (
-    MAX_SECTOR_CONCENTRATION,
+    __get_etf_map,
     _calculate_max_shares,
     _create_ownership_weights,
     _format_portfolio_results,
     _prepare_stock_data,
-    __get_etf_map,
 )
 
 
-COMPANY_MAX_EXPOSURE = 0.10
-RISK_GAMMA = 0.01
-
-
 def _build_expected_net_profit_per_share(
-    stocks: List[StockData],
-    current_prices: List[float],
-    predicted_prices: List[float],
-    dividend_yields: List[float],
-    expense_ratios: List[float],
-    ownership_weights: List[float],
+    stocks: list[StockData],
+    current_prices: list[float],
+    predicted_prices: list[float],
+    dividend_yields: list[float],
+    expense_ratios: list[float],
+    ownership_weights: list[float],
 ) -> np.ndarray:
     mu = np.zeros(len(stocks), dtype=float)
 
-    for i, stock in enumerate(stocks):
+    for i, _stock in enumerate(stocks):
         current_price = float(current_prices[i])
         predicted_price = float(predicted_prices[i])
         dividend_yield = float(dividend_yields[i])
@@ -45,33 +40,33 @@ def _build_expected_net_profit_per_share(
     return mu
 
 
-def _build_sector_matrix(stocks: List[StockData]) -> Tuple[np.ndarray, List[str]]:
+def _build_sector_matrix(stocks: list[StockData]) -> tuple[np.ndarray, list[str]]:
     sectors = sorted({sector for stock in stocks for sector in stock.sector_allocation.keys()})
     sector_index = {sector: idx for idx, sector in enumerate(sectors)}
     matrix = np.zeros((len(sectors), len(stocks)), dtype=float)
 
-    for i, stock in enumerate(stocks):
-        for sector, allocation in stock.sector_allocation.items():
+    for i, _stock in enumerate(stocks):
+        for sector, allocation in _stock.sector_allocation.items():
             matrix[sector_index[sector], i] = float(allocation)
 
     return matrix, sectors
 
 
-def _build_company_matrix(stocks: List[StockData]) -> Tuple[np.ndarray, List[str]]:
-    companies = set()
-    for stock in stocks:
-        for holding in stock.top_holdings:
+def _build_company_matrix(stocks: list[StockData]) -> tuple[np.ndarray, list[str]]:
+    company_set: set[str] = set()
+    for _stock in stocks:
+        for holding in _stock.top_holdings:
             try:
-                companies.add(str(holding[0]))
+                company_set.add(str(holding[0]))
             except Exception:
                 continue
 
-    companies = sorted(companies)
+    companies: list[str] = sorted(company_set)
     company_index = {company: idx for idx, company in enumerate(companies)}
     matrix = np.zeros((len(companies), len(stocks)), dtype=float)
 
-    for i, stock in enumerate(stocks):
-        for holding in stock.top_holdings:
+    for i, _stock in enumerate(stocks):
+        for holding in _stock.top_holdings:
             try:
                 company = str(holding[0])
                 weight = float(holding[1])
@@ -88,7 +83,7 @@ def _repair_solution(
     max_shares: np.ndarray,
     budget: float,
     scores: np.ndarray,
-) -> List[int]:
+) -> list[int]:
     rounded = np.rint(np.nan_to_num(values, nan=0.0, posinf=0.0, neginf=0.0)).astype(int)
     rounded = np.clip(rounded, 0, max_shares.astype(int))
 
@@ -110,12 +105,12 @@ def _repair_solution(
 
 
 def _run_cvxpy_optimization_with_map(
-    stocks: List[StockData],
+    stocks: list[StockData],
     budget: float,
     max_per_etf_budget: float,
-    etf_map: Dict[str, int],
+    etf_map: dict[str, int],
     include_risk: bool = True,
-) -> Tuple[List[int], List[StockData], List[float], List[float], List[float], List[float], List[str]]:
+) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
     max_shares_per_stock = np.asarray(_calculate_max_shares(current_prices, max_per_etf_budget), dtype=int)
     ownership_weights = _create_ownership_weights(tickers, etf_map)
@@ -150,8 +145,8 @@ def _run_cvxpy_optimization_with_map(
         )
 
     volatility_proxy = np.asarray([
-        _stock_volatility(stock, float(current_prices_arr[i]))
-        for i, stock in enumerate(stocks)
+        _stock_volatility(_stock, float(current_prices_arr[i]))
+        for i, _stock in enumerate(stocks)
     ], dtype=float)
 
     x = cp.Variable(len(stocks), integer=True)
@@ -162,11 +157,11 @@ def _run_cvxpy_optimization_with_map(
     sector_exposure = A_sector @ value_vector if A_sector.size else None
     company_exposure = A_company @ value_vector if A_company.size else None
 
-    constraints: List[cp.Constraint] = [x >= 0, x <= max_shares_per_stock, cost <= budget + 1e-6]
+    constraints: list[cp.Constraint] = [x >= 0, x <= max_shares_per_stock, cost <= budget + 1e-6]
     if sector_exposure is not None:
-        constraints.extend([sector_exposure <= MAX_SECTOR_CONCENTRATION * budget])
+        constraints.extend([sector_exposure <= settings.ga.max_sector_concentration * budget])
     if company_exposure is not None:
-        constraints.extend([company_exposure <= COMPANY_MAX_EXPOSURE * budget])
+        constraints.extend([company_exposure <= settings.cvxpy.company_max_exposure * budget])
 
     risk_penalty = 0
     if include_risk:
@@ -179,7 +174,7 @@ def _run_cvxpy_optimization_with_map(
         if company_exposure is not None and company_exposure.size > 0:
             risk_penalty += 0.20 * cp.sum_squares(company_exposure / max(budget, 1e-9))
 
-    objective = profit - (RISK_GAMMA * risk_penalty if include_risk else 0)
+    objective = profit - (settings.cvxpy.risk_gamma * risk_penalty if include_risk else 0)
 
     try:
         problem = cp.Problem(cp.Maximize(objective), constraints)
@@ -191,11 +186,11 @@ def _run_cvxpy_optimization_with_map(
         relaxed_value_vector = cp.multiply(current_prices_arr, relaxed_x)
         relaxed_cost = cp.sum(relaxed_value_vector)
         relaxed_profit = mu @ relaxed_x
-        relaxed_constraints: List[cp.Constraint] = [relaxed_x >= 0, relaxed_x <= max_shares_per_stock, relaxed_cost <= budget + 1e-6]
+        relaxed_constraints: list[cp.Constraint] = [relaxed_x >= 0, relaxed_x <= max_shares_per_stock, relaxed_cost <= budget + 1e-6]
         if A_sector.size:
-            relaxed_constraints.append(A_sector @ relaxed_value_vector <= MAX_SECTOR_CONCENTRATION * budget)
+            relaxed_constraints.append(A_sector @ relaxed_value_vector <= settings.ga.max_sector_concentration * budget)
         if A_company.size:
-            relaxed_constraints.append(A_company @ relaxed_value_vector <= COMPANY_MAX_EXPOSURE * budget)
+            relaxed_constraints.append(A_company @ relaxed_value_vector <= settings.cvxpy.company_max_exposure * budget)
 
         relaxed_risk_penalty = 0
         if include_risk:
@@ -210,7 +205,7 @@ def _run_cvxpy_optimization_with_map(
             if relaxed_company is not None and relaxed_company.size > 0:
                 relaxed_risk_penalty += 0.20 * cp.sum_squares(relaxed_company / max(budget, 1e-9))
 
-        relaxed_objective = relaxed_profit - (RISK_GAMMA * relaxed_risk_penalty if include_risk else 0)
+        relaxed_objective = relaxed_profit - (settings.cvxpy.risk_gamma * relaxed_risk_penalty if include_risk else 0)
         relaxed_problem = cp.Problem(cp.Maximize(relaxed_objective), relaxed_constraints)
         relaxed_problem.solve(solver=cp.OSQP, verbose=False)
         values = np.asarray(relaxed_x.value if relaxed_x.value is not None else np.zeros(len(stocks)))
@@ -223,7 +218,7 @@ def _run_cvxpy_optimization_with_map(
     return best_individual, stocks, current_prices, predicted_prices, dividend_yields, expense_ratios, tickers
 
 
-def optimize(stocks: List[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
+def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
     if max_per_etf_budget is None:
         max_per_etf_budget = min(50.0, budget / 2)
     elif max_per_etf_budget > budget:

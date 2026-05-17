@@ -3,12 +3,14 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from statistics import NormalDist
-from typing import Any, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from arch import arch_model
 from pandas import DataFrame
+
+from src.logic.data.forecast import Forecast
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ class GarchForecastModel:
     alpha: float
     mu_hat: float
 
-    def plot(self, forecast: DataFrame):
+    def plot(self, forecast: DataFrame) -> None:
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -45,7 +47,6 @@ class GarchForecastModel:
         ax.set_ylabel("Price")
         ax.legend(loc="best")
         fig.autofmt_xdate()
-        return ax
 
 
 def _clean_input(data: DataFrame) -> DataFrame:
@@ -67,8 +68,8 @@ def _future_business_days(last_date: pd.Timestamp, periods: int) -> pd.DatetimeI
     return pd.bdate_range(start=last_date + pd.tseries.offsets.BDay(1), periods=periods)
 
 
-def _fit_garch(returns_pct: pd.Series):
-    am = arch_model(returns_pct, mean="Zero", vol="Garch", p=1, q=1, dist="normal")
+def _fit_garch(returns_pct: pd.Series) -> Any:
+    am = arch_model(returns_pct, mean="Zero", vol="Garch", p=1, q=1, dist="normal")  # type: ignore[arg-type]
     return am.fit(disp="off")
 
 
@@ -76,7 +77,7 @@ def predict(
     data: DataFrame,
     predict_period: int = 30,
     interval_width: float = 0.95,
-) -> Tuple[GarchForecastModel, DataFrame]:
+) -> Forecast:
     """Forecast future prices with a historical-drift mean and GARCH(1,1) volatility.
 
     Drift μ̂ is the sample mean of daily log returns; volatility is modelled by
@@ -170,4 +171,4 @@ def predict(
         alpha=alpha,
         mu_hat=mu_hat,
     )
-    return model, res
+    return Forecast(series=res, model=model)

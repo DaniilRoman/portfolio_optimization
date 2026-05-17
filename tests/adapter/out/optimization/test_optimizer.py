@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Test script for the refactored optimizer.py"""
 
-from unittest.mock import Mock, patch
+from unittest.mock import patch
+
 import numpy as np
+
 from src.adapter.out.optimization import optimizer
-from src.logic.data.data import StockData, ProfitabilityData
+from src.logic.data.data import ProfitabilityData, StockData
+
 
 def create_test_stock_data():
     """Create sample StockData objects for testing with clear risk/reward tradeoffs"""
@@ -143,7 +146,7 @@ def test_optimizer_basic():
         def extract_risk_metrics(section):
             metrics = {}
             lines = section.split('\n')
-            for i, line in enumerate(lines):
+            for line in lines:
                 if "Volatility:" in line:
                     metrics['volatility'] = float(line.split("Volatility:")[1].split('%')[0].strip())
                 elif "Sector Concentration:" in line:
@@ -196,7 +199,7 @@ def test_optimizer_risk_differentiation():
         def extract_risk_metrics(section):
             metrics = {}
             lines = section.split('\n')
-            for i, line in enumerate(lines):
+            for line in lines:
                 if "Volatility:" in line:
                     metrics['volatility'] = float(line.split("Volatility:")[1].split('%')[0].strip())
                 elif "Sector Concentration:" in line:

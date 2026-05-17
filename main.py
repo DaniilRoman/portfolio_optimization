@@ -1,10 +1,10 @@
 import logging
 
+from config.stock_names import etf_list
+from src.adapter.out.notify import notifier
+from src.adapter.out.optimization import optimizer_dispatcher as optimizer
 from src.logic import stock_finder
 from src.logic.data import data
-from src.adapter.out.notify import notifier
-from src.adapter.out.optimization import optimizer
-from config.stock_names import etf_list
 
 if __name__ == '__main__':
     notifier.send_text_message("=================")

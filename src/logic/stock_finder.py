@@ -1,62 +1,54 @@
 import logging
 import os
+
 import pandas as pd
 
-from src.adapter.out.stock_pick import stock_picker
-from src.adapter.out.download import downloader
-from src.adapter.out.predict import predicter
-from src.adapter.out.notify import notifier
 from src.adapter.out.analyze import analyzer
+from src.adapter.out.download import downloader
+from src.adapter.out.notify import notifier
+from src.adapter.out.predict import predicter
 from src.adapter.out.stats import stats_calculator
+from src.adapter.out.stock_pick import stock_picker
 from src.infrastructure.utils import utils
 from src.logic.data.data import StockData, StockInfo
 
 
-def run(stock_name = None):
+def run(stock_name: str | None = None) -> StockData | None:
     if stock_name is None:
         stock_name = stock_picker.pick()
-    logging.info(f"Started an analyses of `{stock_name}`")
+    logging.info("Started an analyses of `%s`", stock_name)
 
-    stock_info = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365*5))
+    stock_info = downloader.download_stock_data(stock_name, start_date=utils.prev_day(365 * 5))
     if __toSkip(stock_info):
-        logging.info(f"Skipped stock: {stock_name}")
-        return
+        logging.info("Skipped stock: %s", stock_name)
+        return None
     two_year_data = __slice(stock_info.historic_data, 365 * 2)
     five_year_data = stock_info.historic_data
-    five_year_model, five_year_predicted_prices = predicter.predict(five_year_data, predict_period=90)
-    two_year_model, two_year_predicted_prices = predicter.predict(two_year_data, predict_period=90)
+    five_year_forecast = predicter.predict(five_year_data, predict_period=90)
+    two_year_forecast = predicter.predict(two_year_data, predict_period=90)
 
-    analyses_result = analyzer.analyses(stock_name,
-                                        stock_info,
-                                        two_year_model=two_year_model,
-                                        two_year_predicted_prices=two_year_predicted_prices,
-                                        five_year_model=five_year_model,
-                                        five_year_predicted_prices=five_year_predicted_prices)
+    analyses_result = analyzer.analyses(
+        stock_name,
+        stock_info,
+        two_year_forecast=two_year_forecast,
+        five_year_forecast=five_year_forecast,
+    )
     notifier.notify(analyses_result)
     stats_calculator.calculate(analyses_result)
     __clean_artifacts(analyses_result)
     return analyses_result
 
 
-def __slice(historic_data, prev_date) -> any:
-    today = historic_data.iloc[-1].name  # Get the latest date in the data
-    two_years_ago = today - pd.Timedelta(days=prev_date)  # Calculate date 2 years ago
-    data_2y = historic_data.loc[two_years_ago:today]
-    return data_2y
+def __slice(historic_data: pd.DataFrame, prev_date: int) -> pd.DataFrame:
+    today = historic_data.iloc[-1].name
+    two_years_ago = today - pd.Timedelta(days=prev_date)
+    return historic_data.loc[two_years_ago:today]
 
 
-def __clean_artifacts(analyses_result: StockData):
+def __clean_artifacts(analyses_result: StockData) -> None:
     os.remove(analyses_result.two_year_file_name)
     os.remove(analyses_result.five_year_file_name)
 
 
 def __toSkip(stock_info: StockInfo) -> bool:
-    return False  # TODO disable skipping for selected ETFs
-    
-    # Skip stocks that are too expensive or are S&P 500 ETFs (which are already well-covered)
-    # name = stock_info.ticker.info.get('longName', '')
-    # price = stock_info.ticker.info.get('open', 0)
-    
-    # Skip if price is too high (over 100 EUR) or if it's an S&P 500 ETF
-    # This helps focus on more affordable and niche ETFs
-    # return price > 100 or 'S&P' in name
+    return False

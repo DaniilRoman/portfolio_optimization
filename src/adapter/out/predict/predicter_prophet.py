@@ -1,7 +1,8 @@
+import pandas as pd
 from pandas import DataFrame
 from prophet import Prophet
-import pandas as pd
-from typing import Tuple
+
+from src.logic.data.forecast import Forecast
 
 
 def predict(
@@ -18,7 +19,7 @@ def predict(
     daily_seasonality: bool = False,
     add_holidays: bool = True,
     **_: object,
-) -> Tuple[Prophet, DataFrame]:
+) -> Forecast:
     """Predict future prices using Facebook Prophet with financial time series options.
 
     Returns a Prophet model and a forecast DataFrame with columns:
@@ -63,4 +64,4 @@ def predict(
     # Volatility forecast is GARCH-specific; emit a zero column to keep the schema uniform.
     res['volatility_forecast'] = 0.0
 
-    return prophet, res
+    return Forecast(series=res, model=prophet)
