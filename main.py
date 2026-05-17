@@ -17,4 +17,4 @@ if __name__ == '__main__':
         except data.SkipException as e:
             logging.error(e)
     optimization_result = optimizer.optimize(analyses_results)
-    notifier.send_text_message(optimization_result)
+    notifier.send_optimization_result(optimization_result)

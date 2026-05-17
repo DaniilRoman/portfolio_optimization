@@ -72,3 +72,34 @@ class StockInfo:
 
 class SkipException(Exception):
     pass
+
+
+@dataclass
+class Allocation:
+    asset: StockData
+    quantity: int
+    total_cost: float
+    net_profit: float
+    capital_gain: float
+    dividend_income: float
+    expense_fee: float
+    expense_ratio: float
+
+
+@dataclass
+class RiskMetrics:
+    volatility: float
+    sector_concentration: float
+    company_overlap: float
+
+
+@dataclass
+class Portfolio:
+    allocations: list[Allocation]
+    risk_metrics: RiskMetrics
+
+
+@dataclass
+class OptimizationResult:
+    risk_aware: Portfolio
+    profit_only: Portfolio

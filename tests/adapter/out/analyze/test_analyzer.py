@@ -1,65 +1,15 @@
 """Tests for analyzer.py"""
 
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 
 from src.adapter.out.analyze import analyzer
-from src.logic.data.data import ProfitabilityData, StockData, StockInfo, TickerMetadata
+from src.logic.data.data import ProfitabilityData, StockData, StockInfo
 from src.logic.data.forecast import Forecast
-
-
-def create_test_historic_data() -> pd.DataFrame:
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365 * 5)
-    dates = pd.date_range(start=start_date, end=end_date, freq="D")
-    np.random.seed(42)
-    prices = np.abs(100.0 + np.linspace(0, 50, len(dates)) + np.random.normal(0, 5, len(dates)))
-    return pd.DataFrame({"y": prices}, index=dates)
-
-
-def create_test_predicted_df(base: float = 150.0, n: int = 10) -> pd.DataFrame:
-    future_dates = pd.date_range(start=datetime.now(), periods=n, freq="D")
-    predicted = np.full(n, base)
-    return pd.DataFrame(
-        {"yhat": predicted, "yhat_lower": predicted - 5, "yhat_upper": predicted + 5},
-        index=future_dates,
-    )
-
-
-def make_ticker_metadata(**overrides) -> TickerMetadata:
-    defaults = dict(
-        long_name="Test ETF",
-        currency="USD",
-        industry="ETF",
-        beta=1.0,
-        dividend_yield=0.02,
-        total_assets=1_000_000_000.0,
-        expense_ratio=0.0003,
-        average_volume=1_000_000.0,
-        trailing_eps=5.0,
-        forward_eps=5.5,
-        net_income_to_common=1_000_000.0,
-        ebitda_margins=0.3,
-        operating_margins=0.25,
-        top_holdings=np.array([["Apple Inc", 0.08], ["Microsoft Corp", 0.07]]),
-        sector_weights={"Technology": 0.45, "Healthcare": 0.30, "Financials": 0.25},
-        description="Test Family || ETF || Test ETF Description",
-    )
-    defaults.update(overrides)
-    return TickerMetadata(**defaults)  # type: ignore[arg-type]
-
-
-def make_forecast(base: float = 150.0, n: int = 10) -> Forecast:
-    mock_model = Mock()
-    mock_model.plot = Mock()
-    return Forecast(series=create_test_predicted_df(base, n), model=mock_model)
-
-
-def create_test_stock_info(**meta_overrides) -> StockInfo:
-    return StockInfo(historic_data=create_test_historic_data(), ticker=make_ticker_metadata(**meta_overrides))
+from tests.factories import make_forecast, make_stock_info, make_ticker_metadata
 
 
 def test_last_price():
@@ -135,7 +85,7 @@ def test_analyses_function():
     """Test the main analyses function"""
     print("Testing analyses function...")
     ticker_symbol = "VOO"
-    stock_info = create_test_stock_info()
+    stock_info = make_stock_info(ticker=make_ticker_metadata(trailing_eps=5.0, forward_eps=5.5))
     two_year_forecast = make_forecast(base=200.0)
     five_year_forecast = make_forecast(base=210.0)
 
@@ -165,7 +115,7 @@ def test_analyses_with_missing_fund_data():
     """Test analyses function with zeroed-out optional fields"""
     print("Testing analyses with missing fund data...")
     ticker_symbol = "TEST"
-    stock_info = create_test_stock_info(total_assets=0, expense_ratio=0, dividend_yield=0)
+    stock_info = make_stock_info(ticker=make_ticker_metadata(total_assets=0, expense_ratio=0, dividend_yield=0))
     two_year_forecast = make_forecast()
     five_year_forecast = make_forecast()
 
@@ -184,7 +134,7 @@ def test_analyses_with_empty_description():
     """Test analyses function when description is empty"""
     print("Testing analyses with empty description...")
     ticker_symbol = "TEST"
-    stock_info = create_test_stock_info(description="")
+    stock_info = make_stock_info(ticker=make_ticker_metadata(description=""))
     two_year_forecast = make_forecast()
     five_year_forecast = make_forecast()
 
@@ -198,11 +148,10 @@ def test_pessimistic_predict_price_calculation():
     """Test the pessimistic predict_price uses min of yhat_lower values"""
     print("Testing pessimistic predict_price calculation...")
     ticker_symbol = "TEST"
-    stock_info = create_test_stock_info()
+    stock_info = make_stock_info()
 
     future_dates = pd.date_range(start=datetime.now(), periods=10, freq="D")
-    mock_model = Mock()
-    mock_model.plot = Mock()
+    mock_model = MagicMock()
 
     two_year_forecast = Forecast(
         series=pd.DataFrame({"yhat": [200.0] * 10, "yhat_lower": [195.0] * 10, "yhat_upper": [205.0] * 10}, index=future_dates),
@@ -226,11 +175,10 @@ def test_pessimistic_predict_price_with_different_values():
     """Test pessimistic calculation when five-year minimum is lower"""
     print("Testing pessimistic predict_price with different values...")
     ticker_symbol = "TEST"
-    stock_info = create_test_stock_info()
+    stock_info = make_stock_info()
 
     future_dates = pd.date_range(start=datetime.now(), periods=10, freq="D")
-    mock_model = Mock()
-    mock_model.plot = Mock()
+    mock_model = MagicMock()
 
     two_year_forecast = Forecast(
         series=pd.DataFrame({"yhat": [205.0] * 10, "yhat_lower": [200.0] * 10, "yhat_upper": [210.0] * 10}, index=future_dates),

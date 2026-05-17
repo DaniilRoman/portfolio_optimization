@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pandas as pd
 
-from src.logic.data.data import StockData
+from src.logic.data.data import OptimizationResult, StockData
 
 FIXTURES = pathlib.Path(__file__).parent.parent / "fixtures"
 
@@ -101,38 +101,19 @@ class TestMainPipelineHappyPath:
 
         mock_notify.assert_called_once()
 
-    def test_optimizer_produces_recommendation_string(self) -> None:
-        from src.logic.data.data import ProfitabilityData, StockData
+    def test_optimizer_produces_optimization_result(self) -> None:
+        from tests.factories import make_stock_data
 
-        stocks = [
-            StockData(
-                ticker_symbol="TST",
-                stock_name="Test ETF",
-                currency="USD",
-                current_price=350.0,
-                predict_price=380.0,
-                two_year_file_name="/tmp/x.png",
-                five_year_file_name="/tmp/y.png",
-                is_stock_growing=True,
-                industry="ETF",
-                profitability_data=ProfitabilityData(
-                    trailing_eps=2.0,
-                    forward_eps=2.5,
-                    netIncome_to_common=1e6,
-                    ebitda_margins=0.20,
-                    operating_margins=0.15,
-                ),
-                beta=1.0,
-                standard_deviation=0.12,
-                dividend_yield=0.01,
-                top_holdings=np.array([["AAPL", 0.07]]),
-                sector_allocation={"technology": 0.60},
-                average_daily_volume=1_000_000.0,
-                assets_under_management=5e9,
-                expense_ratio=0.0003,
-                description="Fixture ETF",
-            )
-        ]
+        stocks = [make_stock_data(
+            ticker_symbol="TST",
+            current_price=350.0,
+            predict_price=380.0,
+            two_year_file_name="/tmp/x.png",
+            five_year_file_name="/tmp/y.png",
+            top_holdings=np.array([["AAPL", 0.07]]),
+            sector_allocation={"technology": 0.60},
+            description="Fixture ETF",
+        )]
 
         mock_response = MagicMock()
         mock_response.content = b"0"
@@ -140,7 +121,8 @@ class TestMainPipelineHappyPath:
         with patch("requests.get", return_value=mock_response):
             from src.adapter.out.optimization import optimizer_dispatcher
 
-            recommendation = optimizer_dispatcher.optimize(stocks, budget=10_000)
+            result = optimizer_dispatcher.optimize(stocks, budget=10_000)
 
-        assert isinstance(recommendation, str)
-        assert len(recommendation) > 0
+        assert isinstance(result, OptimizationResult)
+        assert isinstance(result.risk_aware.allocations, list)
+        assert isinstance(result.profit_only.allocations, list)

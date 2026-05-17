@@ -4,7 +4,7 @@ import numpy as np
 import telepot
 
 from config.configuration import settings
-from src.logic.data.data import ProfitabilityData, StockData
+from src.logic.data.data import OptimizationResult, Portfolio, ProfitabilityData, StockData
 
 
 def send_text_message(text: str) -> None:
@@ -127,3 +127,63 @@ def __to_msg(result: StockData) -> str:
         f"{assets_under_management}"
         f"{expense_ratio}"
     ).strip()
+
+
+def send_optimization_result(result: OptimizationResult) -> None:
+    message = __format_optimization_result(result)
+    send_text_message(message)
+
+
+def __format_portfolio(portfolio: Portfolio) -> str:
+    if not portfolio.allocations:
+        return "No ETFs to buy with current budget and constraints."
+
+    lines: list[str] = []
+    for alloc in portfolio.allocations:
+        net_pct = (alloc.net_profit / alloc.total_cost * 100) if alloc.total_cost > 0 else 0
+        forecast_vol = float(getattr(alloc.asset, "forecast_volatility", 0.0))
+        lines.append(f"• *{alloc.asset.ticker_symbol}*: {alloc.quantity} shares")
+        lines.append(f"  {alloc.asset.stock_name}")
+        lines.append(f"  Cost: €{alloc.total_cost:.2f}")
+        lines.append(f"  Net Profit: €{alloc.net_profit:.2f} ({net_pct:.1f}%)")
+        lines.append(f"    - Capital Gain: €{alloc.capital_gain:.2f}")
+        lines.append(f"    - Dividend Income: €{alloc.dividend_income:.2f}")
+        lines.append(f"    - Expenses ({alloc.expense_ratio * 100:.2f}%): €{alloc.expense_fee:.2f}")
+        if forecast_vol > 0:
+            lines.append(f"    - Forecast Volatility: {forecast_vol * 100:.2f}%")
+        lines.append("")
+
+    total_cost = sum(a.total_cost for a in portfolio.allocations)
+    total_profit = sum(a.net_profit for a in portfolio.allocations)
+    total_gains = sum(a.capital_gain for a in portfolio.allocations)
+    total_div = sum(a.dividend_income for a in portfolio.allocations)
+    total_exp = sum(a.expense_fee for a in portfolio.allocations)
+
+    lines.append(f"💰 *Total Investment:* €{total_cost:.2f}")
+    lines.append(f"📈 *Total Net Profit:* €{total_profit:.2f}")
+    lines.append(f"   - Capital Gains: €{total_gains:.2f}")
+    lines.append(f"   - Dividend Income: €{total_div:.2f}")
+    lines.append(f"   - Total Expenses: €{total_exp:.2f}")
+    lines.append(f"   - Total Gross Profit: €{total_gains + total_div:.2f}")
+    lines.append("")
+    rm = portfolio.risk_metrics
+    lines.append("⚠️ *Risk Metrics:*")
+    lines.append(f"   - Volatility: {rm.volatility * 100:.1f}%")
+    lines.append(f"   - Sector Concentration: {rm.sector_concentration:.3f}")
+    lines.append(f"   - Company Overlap: {rm.company_overlap:.3f}")
+
+    return "\n".join(lines)
+
+
+def __format_optimization_result(result: OptimizationResult) -> str:
+    return "\n".join([
+        "📊 *Portfolio Optimization Results*",
+        "",
+        "⚠️ **Risk-Aware Optimization** (Minimizes risk while maximizing profit)",
+        "",
+        __format_portfolio(result.risk_aware),
+        "",
+        "📈 **Profit-Only Optimization** (Maximizes profit only)",
+        "",
+        __format_portfolio(result.profit_only),
+    ])

@@ -4,13 +4,13 @@ import cvxpy as cp
 import numpy as np
 
 from config.configuration import settings
-from src.logic.data.data import StockData
+from src.logic.data.data import OptimizationResult, StockData
 
 from .optimizer import (
     __get_etf_map,
+    _build_portfolio,
     _calculate_max_shares,
     _create_ownership_weights,
-    _format_portfolio_results,
     _prepare_stock_data,
 )
 
@@ -218,7 +218,7 @@ def _run_cvxpy_optimization_with_map(
     return best_individual, stocks, current_prices, predicted_prices, dividend_yields, expense_ratios, tickers
 
 
-def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> str:
+def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> OptimizationResult:
     if max_per_etf_budget is None:
         max_per_etf_budget = min(50.0, budget / 2)
     elif max_per_etf_budget > budget:
@@ -226,42 +226,14 @@ def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: 
 
     etf_map = __get_etf_map()
 
-    risk_aware_individual, risk_stocks, risk_current_prices, risk_predicted_prices, risk_dividend_yields, risk_expense_ratios, risk_tickers = _run_cvxpy_optimization_with_map(
+    risk_individual, r_stocks, r_prices, r_predicted, r_div, r_exp, r_tickers = _run_cvxpy_optimization_with_map(
         stocks, budget, max_per_etf_budget, etf_map, include_risk=True
     )
-    profit_only_individual, profit_stocks, profit_current_prices, profit_predicted_prices, profit_dividend_yields, profit_expense_ratios, profit_tickers = _run_cvxpy_optimization_with_map(
+    profit_individual, p_stocks, p_prices, p_predicted, p_div, p_exp, p_tickers = _run_cvxpy_optimization_with_map(
         stocks, budget, max_per_etf_budget, etf_map, include_risk=False
     )
 
-    risk_aware_results = _format_portfolio_results(
-        risk_aware_individual,
-        risk_stocks,
-        risk_current_prices,
-        risk_predicted_prices,
-        risk_dividend_yields,
-        risk_expense_ratios,
-        risk_tickers,
-        include_risk=True,
+    return OptimizationResult(
+        risk_aware=_build_portfolio(risk_individual, r_stocks, r_prices, r_predicted, r_div, r_exp, r_tickers),
+        profit_only=_build_portfolio(profit_individual, p_stocks, p_prices, p_predicted, p_div, p_exp, p_tickers),
     )
-    profit_only_results = _format_portfolio_results(
-        profit_only_individual,
-        profit_stocks,
-        profit_current_prices,
-        profit_predicted_prices,
-        profit_dividend_yields,
-        profit_expense_ratios,
-        profit_tickers,
-        include_risk=False,
-    )
-
-    return "\n".join([
-        "📊 *Portfolio Optimization Results*",
-        "",
-        "⚠️ **Risk-Aware Optimization** (Minimizes risk while maximizing profit)",
-        "",
-        risk_aware_results,
-        "",
-        "📈 **Profit-Only Optimization** (Maximizes profit only)",
-        "",
-        profit_only_results,
-    ])

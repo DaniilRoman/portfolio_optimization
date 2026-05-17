@@ -5,11 +5,12 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 
 from src.adapter.out.notify import notifier
-from src.logic.data.data import ProfitabilityData, StockData
+from src.logic.data.data import Allocation, OptimizationResult, Portfolio, RiskMetrics, StockData
+from tests.factories import make_stock_data
 
 
 def _make_stock_data(**overrides: object) -> StockData:
-    defaults: dict[str, object] = {
+    kwargs: dict = {
         "ticker_symbol": "VOO",
         "stock_name": "Vanguard S&P 500 ETF",
         "currency": "USD",
@@ -18,16 +19,6 @@ def _make_stock_data(**overrides: object) -> StockData:
         "two_year_file_name": "/tmp/voo_2y.png",
         "five_year_file_name": "/tmp/voo_5y.png",
         "is_stock_growing": True,
-        "industry": "ETF",
-        "profitability_data": ProfitabilityData(
-            trailing_eps=3.0,
-            forward_eps=3.5,
-            netIncome_to_common=500_000.0,
-            ebitda_margins=0.25,
-            operating_margins=0.20,
-        ),
-        "beta": 1.0,
-        "standard_deviation": 0.15,
         "dividend_yield": 0.013,
         "top_holdings": np.array([["AAPL", 0.07], ["MSFT", 0.06]]),
         "sector_allocation": {"technology": 0.30, "healthcare": 0.20},
@@ -38,8 +29,27 @@ def _make_stock_data(**overrides: object) -> StockData:
         "forecast_volatility": 0.12,
         "prediction_uncertainty": 15.0,
     }
-    defaults.update(overrides)
-    return StockData(**defaults)  # type: ignore[arg-type]
+    kwargs.update(overrides)
+    return make_stock_data(**kwargs)
+
+
+def _make_optimization_result() -> OptimizationResult:
+    stock = _make_stock_data()
+    alloc = Allocation(
+        asset=stock,
+        quantity=2,
+        total_cost=800.0,
+        net_profit=95.0,
+        capital_gain=100.0,
+        dividend_income=10.4,
+        expense_fee=0.24,
+        expense_ratio=0.0003,
+    )
+    portfolio = Portfolio(
+        allocations=[alloc],
+        risk_metrics=RiskMetrics(volatility=0.12, sector_concentration=0.3, company_overlap=0.1),
+    )
+    return OptimizationResult(risk_aware=portfolio, profit_only=portfolio)
 
 
 class TestSendTextMessage:
@@ -125,3 +135,35 @@ class TestMarkdownEscaping:
         result = _make_stock_data(top_holdings=np.array([["TICK`ER", 0.05]]))
         caption = self._get_caption(result)
         assert r"\`" in caption
+
+
+class TestSendOptimizationResult:
+    def test_sends_text_message(self) -> None:
+        result = _make_optimization_result()
+        mock_bot = MagicMock()
+        with patch("telepot.Bot", return_value=mock_bot):
+            notifier.send_optimization_result(result)
+        mock_bot.sendMessage.assert_called_once()
+
+    def test_message_contains_portfolio_sections(self) -> None:
+        result = _make_optimization_result()
+        mock_bot = MagicMock()
+        with patch("telepot.Bot", return_value=mock_bot):
+            notifier.send_optimization_result(result)
+        _, kwargs = mock_bot.sendMessage.call_args
+        text = kwargs["text"]
+        assert "Risk-Aware Optimization" in text
+        assert "Profit-Only Optimization" in text
+        assert "VOO" in text
+
+    def test_empty_portfolio_shows_no_etfs_message(self) -> None:
+        empty_portfolio = Portfolio(
+            allocations=[],
+            risk_metrics=RiskMetrics(volatility=0.0, sector_concentration=0.0, company_overlap=0.0),
+        )
+        result = OptimizationResult(risk_aware=empty_portfolio, profit_only=empty_portfolio)
+        mock_bot = MagicMock()
+        with patch("telepot.Bot", return_value=mock_bot):
+            notifier.send_optimization_result(result)
+        _, kwargs = mock_bot.sendMessage.call_args
+        assert "No ETFs" in kwargs["text"]

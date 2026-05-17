@@ -1,7 +1,9 @@
-from typing import Any, Protocol
+from typing import Protocol
 
 import pandas as pd
 
+from src.logic.data.forecast import Forecast
+
 
 class Predictor(Protocol):
-    def predict(self, history: pd.DataFrame, period: int) -> tuple[Any, pd.DataFrame]: ...
+    def predict(self, history: pd.DataFrame, period: int) -> Forecast: ...
