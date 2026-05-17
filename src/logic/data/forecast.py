@@ -1,3 +1,4 @@
+"""Forecast value object wrapping a prediction DataFrame with typed accessors for final price, uncertainty band, and volatility."""
 from dataclasses import dataclass
 from typing import Any
 

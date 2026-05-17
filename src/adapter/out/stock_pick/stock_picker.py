@@ -1,3 +1,4 @@
+"""Filters the configured stock universe to a tradable subset by removing delisted or unreachable tickers."""
 import requests
 
 import config.stock_names as stock_names

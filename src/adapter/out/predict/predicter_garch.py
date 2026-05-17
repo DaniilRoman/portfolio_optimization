@@ -1,3 +1,4 @@
+"""GARCH(1,1)+drift price forecaster; fits an ARCH model on log-return series and projects forward with confidence bands."""
 from __future__ import annotations
 
 import logging

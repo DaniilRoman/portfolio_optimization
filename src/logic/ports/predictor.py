@@ -1,3 +1,4 @@
+"""Predictor protocol: defines the predict(history, period) -> Forecast contract all predictor backends must satisfy."""
 from typing import Protocol
 
 import pandas as pd

@@ -1,3 +1,4 @@
+"""Convex portfolio optimizer using CVXPY; solves a risk-adjusted allocation problem subject to budget and concentration constraints."""
 from __future__ import annotations
 
 import cvxpy as cp

@@ -1,3 +1,4 @@
+"""Core domain types: StockData, StockInfo, TickerMetadata, ProfitabilityData, OptimizationResult, Portfolio, Allocation, RiskMetrics."""
 from dataclasses import dataclass
 
 import numpy as np

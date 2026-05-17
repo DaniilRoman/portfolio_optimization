@@ -1,3 +1,4 @@
+"""Routes optimize() calls to the GA or CVXPY backend based on settings.OPTIMIZER."""
 from config.configuration import settings
 from src.logic.data.data import OptimizationResult, StockData
 

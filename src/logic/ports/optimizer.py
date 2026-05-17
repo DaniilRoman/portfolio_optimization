@@ -1,3 +1,4 @@
+"""Optimizer protocol: defines the optimize(stocks, budget) -> OptimizationResult contract all optimizer backends must satisfy."""
 from typing import Protocol
 
 from src.logic.data.data import OptimizationResult, StockData

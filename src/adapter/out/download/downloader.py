@@ -1,3 +1,4 @@
+"""Downloads OHLCV price history and ticker metadata from yfinance; outputs StockInfo with TickerMetadata."""
 import json
 import logging
 import urllib

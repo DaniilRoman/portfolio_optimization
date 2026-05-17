@@ -1,3 +1,4 @@
+"""Builds a StockData aggregate from StockInfo + Forecast; generates two/five-year price-history chart images."""
 import matplotlib.pyplot as plt
 import pandas as pd
 

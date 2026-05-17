@@ -1,3 +1,4 @@
+"""Facebook Prophet price forecaster; fits a trend+seasonality model on daily closes and returns a Forecast with uncertainty bands."""
 import pandas as pd
 from pandas import DataFrame
 from prophet import Prophet

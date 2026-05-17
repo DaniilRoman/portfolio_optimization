@@ -1,3 +1,4 @@
+"""Sends analysis results to a Telegram chat via telepot; handles text messages and photo albums with chunking."""
 import re
 
 import numpy as np

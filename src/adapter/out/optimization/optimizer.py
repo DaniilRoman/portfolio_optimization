@@ -1,3 +1,4 @@
+"""Genetic-algorithm portfolio optimizer using DEAP; reads tuning parameters from settings.ga; outputs OptimizationResult."""
 import random
 from collections.abc import Callable
 
