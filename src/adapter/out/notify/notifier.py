@@ -1,4 +1,5 @@
 """Sends analysis results to a Telegram chat via telepot; handles text messages and photo albums with chunking."""
+import logging
 import re
 
 import numpy as np
@@ -9,6 +10,9 @@ from src.logic.data.data import OptimizationResult, Portfolio, ProfitabilityData
 
 
 def send_text_message(text: str) -> None:
+    if not settings.TELEGRAM_ENABLED:
+        logging.info("[dry-run] send_text_message: %s", text[:120])
+        return
     bot = telepot.Bot(settings.TELEGRAM_TOKEN)
     bot.getMe()
     bot.sendMessage(chat_id=settings.TELEGRAM_TO, text=text)
@@ -17,6 +21,9 @@ def send_text_message(text: str) -> None:
 def notify(result: StockData) -> None:
     if not __is_notifyable(result):
         print(f"Stock {result.stock_name} is not growing - will be skipped")
+        return
+    if not settings.TELEGRAM_ENABLED:
+        logging.info("[dry-run] notify: %s → %s %s", result.ticker_symbol, result.predict_price, result.currency)
         return
     msg_to_send = __to_msg(result)
     first_photo_to_send = open(result.two_year_file_name, "rb")
