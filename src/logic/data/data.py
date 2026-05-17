@@ -42,7 +42,8 @@ class StockData:
     assets_under_management: float
     expense_ratio: float
     description: str
-    prediction_uncertainty: float = 0.0  # New: uncertainty range from Prophet forecast
+    forecast_volatility: float = 0.0  # Annualized volatility forecast (GARCH backend only; 0 for Prophet)
+    prediction_uncertainty: float = 0.0  # Mean forecast-band width (yhat_upper - yhat_lower) over the horizon
 
 
 @dataclass

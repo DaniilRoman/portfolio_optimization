@@ -23,14 +23,14 @@ def run(stock_name = None):
         return
     two_year_data = __slice(stock_info.historic_data, 365 * 2)
     five_year_data = stock_info.historic_data
-    five_year_prophet, five_year_predicted_prices = predicter.predict(five_year_data, predict_period=90)
-    two_year_prophet, two_year_predicted_prices = predicter.predict(two_year_data, predict_period=90)
+    five_year_model, five_year_predicted_prices = predicter.predict(five_year_data, predict_period=90)
+    two_year_model, two_year_predicted_prices = predicter.predict(two_year_data, predict_period=90)
 
-    analyses_result = analyzer.analyses(stock_name, 
-                                        stock_info, 
-                                        two_year_prophet=two_year_prophet, 
-                                        two_year_predicted_prices=two_year_predicted_prices, 
-                                        five_year_prophet=five_year_prophet, 
+    analyses_result = analyzer.analyses(stock_name,
+                                        stock_info,
+                                        two_year_model=two_year_model,
+                                        two_year_predicted_prices=two_year_predicted_prices,
+                                        five_year_model=five_year_model,
                                         five_year_predicted_prices=five_year_predicted_prices)
     notifier.notify(analyses_result)
     stats_calculator.calculate(analyses_result)

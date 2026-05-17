@@ -1,40 +1,43 @@
 import pandas as pd
+from typing import Any
 
 from src.logic.data.data import StockData, StockInfo, ProfitabilityData
 
-from prophet import Prophet
 import matplotlib.pyplot as plt
 
-def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophet, two_year_predicted_prices: pd.DataFrame, five_year_prophet: Prophet, five_year_predicted_prices: pd.DataFrame) -> StockData:
+def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_model: Any, two_year_predicted_prices: pd.DataFrame, five_year_model: Any, five_year_predicted_prices: pd.DataFrame) -> StockData:
     current_price = __last_price(stock_info.historic_data, "y")
     two_year_last_predicted_price = __last_price(two_year_predicted_prices, "yhat")
     five_year_last_predicted_price = __last_price(five_year_predicted_prices, "yhat")
-    
+
     predict_price = __predicted_price(two_year_predicted_prices, five_year_predicted_prices)
-    
-    # Extract prediction uncertainty (average uncertainty range for the forecast period)
-    # We'll use the average uncertainty from the two-year forecast as it's more relevant for optimization
+
+    forecast_period = min(90, len(two_year_predicted_prices))
+
     if 'uncertainty_range' in two_year_predicted_prices.columns:
-        # Get uncertainty for the forecast period (last 90 days for two-year prediction)
-        forecast_period = min(90, len(two_year_predicted_prices))
         forecast_uncertainty = two_year_predicted_prices['uncertainty_range'].tail(forecast_period).mean()
     else:
         forecast_uncertainty = 0.0
-    
+
+    if 'volatility_forecast' in two_year_predicted_prices.columns:
+        forecast_volatility = two_year_predicted_prices['volatility_forecast'].tail(forecast_period).mean()
+    else:
+        forecast_volatility = 0.0
+
     is_stock_growing = __is_stock_growing(current_price, two_year_last_predicted_price, five_year_last_predicted_price, stock_info.historic_data)
-    
-    two_year_prophet.plot(two_year_predicted_prices)
+
+    two_year_model.plot(two_year_predicted_prices)
     two_year_file_name = f'two_year_{ticker_symbol}.png'
     plt.savefig(two_year_file_name)
 
-    five_year_prophet.plot(five_year_predicted_prices)
+    five_year_model.plot(five_year_predicted_prices)
     five_year_file_name = f'five_year_{ticker_symbol}.png'
     plt.savefig(five_year_file_name)
 
     # Extract data from FundsData with proper None handling
     funds_data = stock_info.ticker.funds_data
     info = stock_info.ticker.info
-    
+
     # Get total_assets from info dict (not funds_data)
     total_assets = info.get('totalAssets') or info.get('netAssets') or 0
     # Get expense_ratio from info dict (not funds_data)
@@ -43,13 +46,13 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     # Convert to decimal for calculations: divide by 100
     if expense_ratio != 0:
         expense_ratio = expense_ratio / 100.0
-    
+
     # Get yield from info dict (not funds_data)
     yield_ = info.get('yield') or info.get('dividendYield') or info.get('trailingAnnualDividendYield') or 0
-    
+
     # Get beta - check both 'beta' and 'beta3Year'
     beta = info.get('beta') or info.get('beta3Year') or 0
-    
+
     # Standard deviation doesn't exist in yfinance info, calculate from historical data
     # Calculate standard deviation of daily returns from historic data
     if not stock_info.historic_data.empty:
@@ -77,10 +80,10 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
     except:
         description = ''
     return StockData(
-        ticker_symbol=ticker_symbol, 
+        ticker_symbol=ticker_symbol,
         stock_name=info.get('longName') or 'Unknown',
         currency=info.get('currency') or 'Unknown',
-        current_price=current_price, 
+        current_price=current_price,
         predict_price=predict_price,
         two_year_file_name=two_year_file_name,
         five_year_file_name=five_year_file_name,
@@ -97,15 +100,16 @@ def analyses(ticker_symbol: str, stock_info: StockInfo, two_year_prophet: Prophe
         dividend_yield=yield_,
         assets_under_management=total_assets,
         expense_ratio=expense_ratio,
-        prediction_uncertainty=forecast_uncertainty
+        forecast_volatility=forecast_volatility,
+        prediction_uncertainty=forecast_uncertainty,
     )
-    
+
 def __predicted_price(two_year_predicted_prices: pd.DataFrame, five_year_predicted_prices: pd.DataFrame) -> float:
     # Extract minimum predicted values (pessimistic approach)
     # Use yhat_lower for minimum confidence bound
     two_year_min_predicted_price = __last_price(two_year_predicted_prices, "yhat_lower")
     five_year_min_predicted_price = __last_price(five_year_predicted_prices, "yhat_lower")
-    
+
     # Take the minimum of both minimum predicted values as final predicted price
     return min(two_year_min_predicted_price, five_year_min_predicted_price)
 

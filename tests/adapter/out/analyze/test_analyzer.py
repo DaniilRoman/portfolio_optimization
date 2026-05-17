@@ -225,8 +225,8 @@ def test_analyses_function():
     stock_info = create_test_stock_info()
     
     # Mock Prophet models
-    two_year_prophet = Mock()
-    five_year_prophet = Mock()
+    two_year_model = Mock()
+    five_year_model = Mock()
     
     # Create predicted prices
     two_year_predicted_prices = create_test_predicted_prices()
@@ -240,9 +240,9 @@ def test_analyses_function():
         result = analyzer.analyses(
             ticker_symbol=ticker_symbol,
             stock_info=stock_info,
-            two_year_prophet=two_year_prophet,
+            two_year_model=two_year_model,
             two_year_predicted_prices=two_year_predicted_prices,
-            five_year_prophet=five_year_prophet,
+            five_year_model=five_year_model,
             five_year_predicted_prices=five_year_predicted_prices
         )
     
@@ -299,8 +299,8 @@ def test_analyses_with_missing_fund_data():
     stock_info.ticker.info.pop('yield', None)
     
     # Mock Prophet models
-    two_year_prophet = Mock()
-    five_year_prophet = Mock()
+    two_year_model = Mock()
+    five_year_model = Mock()
     
     # Create predicted prices
     two_year_predicted_prices = create_test_predicted_prices()
@@ -314,9 +314,9 @@ def test_analyses_with_missing_fund_data():
         result = analyzer.analyses(
             ticker_symbol=ticker_symbol,
             stock_info=stock_info,
-            two_year_prophet=two_year_prophet,
+            two_year_model=two_year_model,
             two_year_predicted_prices=two_year_predicted_prices,
-            five_year_prophet=five_year_prophet,
+            five_year_model=five_year_model,
             five_year_predicted_prices=five_year_predicted_prices
         )
     
@@ -345,8 +345,8 @@ def test_analyses_with_exception_in_description():
     stock_info.ticker.funds_data.fund_overview = None
     
     # Mock Prophet models
-    two_year_prophet = Mock()
-    five_year_prophet = Mock()
+    two_year_model = Mock()
+    five_year_model = Mock()
     
     # Create predicted prices
     two_year_predicted_prices = create_test_predicted_prices()
@@ -360,9 +360,9 @@ def test_analyses_with_exception_in_description():
         result = analyzer.analyses(
             ticker_symbol=ticker_symbol,
             stock_info=stock_info,
-            two_year_prophet=two_year_prophet,
+            two_year_model=two_year_model,
             two_year_predicted_prices=two_year_predicted_prices,
-            five_year_prophet=five_year_prophet,
+            five_year_model=five_year_model,
             five_year_predicted_prices=five_year_predicted_prices
         )
     
@@ -380,8 +380,8 @@ def test_pessimistic_predict_price_calculation():
     stock_info = create_test_stock_info()
     
     # Mock Prophet models
-    two_year_prophet = Mock()
-    five_year_prophet = Mock()
+    two_year_model = Mock()
+    five_year_model = Mock()
     
     # Create predicted prices with known values for testing
     # We'll create simple DataFrames with known last values
@@ -409,9 +409,9 @@ def test_pessimistic_predict_price_calculation():
         result = analyzer.analyses(
             ticker_symbol=ticker_symbol,
             stock_info=stock_info,
-            two_year_prophet=two_year_prophet,
+            two_year_model=two_year_model,
             two_year_predicted_prices=two_year_predicted_prices,
-            five_year_prophet=five_year_prophet,
+            five_year_model=five_year_model,
             five_year_predicted_prices=five_year_predicted_prices
         )
     
@@ -437,8 +437,8 @@ def test_pessimistic_predict_price_with_different_values():
     stock_info = create_test_stock_info()
     
     # Mock Prophet models
-    two_year_prophet = Mock()
-    five_year_prophet = Mock()
+    two_year_model = Mock()
+    five_year_model = Mock()
     
     # Create predicted prices with five-year minimum being lower
     future_dates = pd.date_range(start=datetime.now(), periods=10, freq='D')
@@ -465,9 +465,9 @@ def test_pessimistic_predict_price_with_different_values():
         result = analyzer.analyses(
             ticker_symbol=ticker_symbol,
             stock_info=stock_info,
-            two_year_prophet=two_year_prophet,
+            two_year_model=two_year_model,
             two_year_predicted_prices=two_year_predicted_prices,
-            five_year_prophet=five_year_prophet,
+            five_year_model=five_year_model,
             five_year_predicted_prices=five_year_predicted_prices
         )
     

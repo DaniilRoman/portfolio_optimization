@@ -36,15 +36,7 @@ def _build_expected_net_profit_per_share(
         dividend_yield = float(dividend_yields[i])
         expense_ratio = float(expense_ratios[i])
         ownership_weight = float(ownership_weights[i])
-        prediction_uncertainty = float(getattr(stock, "prediction_uncertainty", 0.0))
-
-        if predicted_price > 0 and prediction_uncertainty > 0:
-            relative_uncertainty = prediction_uncertainty / predicted_price
-            confidence_score = 1.0 - min(relative_uncertainty, 0.5)
-        else:
-            confidence_score = 1.0
-
-        expected_gain_per_share = (predicted_price - current_price) * confidence_score
+        expected_gain_per_share = predicted_price - current_price
         dividend_income_per_share = current_price * dividend_yield
         expense_fee_per_share = current_price * expense_ratio
         net_profit_per_share = expected_gain_per_share + dividend_income_per_share - expense_fee_per_share
@@ -145,9 +137,20 @@ def _run_cvxpy_optimization_with_map(
     A_sector, _sectors = _build_sector_matrix(stocks)
     A_company, _companies = _build_company_matrix(stocks)
 
+    def _stock_volatility(stock: StockData, current_price: float) -> float:
+        forecast_vol = float(getattr(stock, "forecast_volatility", 0.0))
+        if forecast_vol <= 0:
+            pred_unc = float(getattr(stock, "prediction_uncertainty", 0.0))
+            if current_price > 0 and pred_unc > 0:
+                forecast_vol = pred_unc / current_price
+        return max(
+            float(getattr(stock, "standard_deviation", 0.0)),
+            forecast_vol,
+            float(getattr(stock, "beta", 0.0)) * 0.15,
+        )
+
     volatility_proxy = np.asarray([
-        max(float(getattr(stock, "standard_deviation", 0.0)), float(getattr(stock, "beta", 0.0)) * 0.15)
-        + float(getattr(stock, "prediction_uncertainty", 0.0)) / max(float(current_prices_arr[i]), 1e-9)
+        _stock_volatility(stock, float(current_prices_arr[i]))
         for i, stock in enumerate(stocks)
     ], dtype=float)
 
