@@ -87,6 +87,12 @@ poetry run ruff check .
 
 # Type check
 poetry run mypy src tests
+
+# Install pre-commit hooks (run once after cloning)
+poetry run pre-commit install
+
+# Run hooks manually against all files
+poetry run pre-commit run --all-files
 ```
 
 <img width="395" alt="Forecast chart example" src="https://github.com/user-attachments/assets/69133dfa-567b-4643-9492-77a044e102c7">

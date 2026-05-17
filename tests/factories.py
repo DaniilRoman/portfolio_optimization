@@ -14,7 +14,11 @@ import numpy as np
 import pandas as pd
 
 from src.logic.data.data import (
+    Allocation,
+    OptimizationResult,
+    Portfolio,
     ProfitabilityData,
+    RiskMetrics,
     StockData,
     StockInfo,
     TickerMetadata,
@@ -128,3 +132,37 @@ def make_forecast(base: float = 150.0, n: int = 10, **overrides: Any) -> Forecas
     )
     defaults.update(overrides)
     return Forecast(**defaults)
+
+
+def make_allocation(**overrides: Any) -> Allocation:
+    stock = overrides.pop("asset", None) or make_stock_data()
+    defaults: dict[str, Any] = dict(
+        asset=stock,
+        quantity=2,
+        total_cost=200.0,
+        net_profit=20.0,
+        capital_gain=15.0,
+        dividend_income=4.0,
+        expense_fee=1.0,
+        expense_ratio=0.0003,
+    )
+    defaults.update(overrides)
+    return Allocation(**defaults)
+
+
+def make_portfolio(**overrides: Any) -> Portfolio:
+    defaults: dict[str, Any] = dict(
+        allocations=[make_allocation()],
+        risk_metrics=RiskMetrics(volatility=0.12, sector_concentration=0.4, company_overlap=0.05),
+    )
+    defaults.update(overrides)
+    return Portfolio(**defaults)
+
+
+def make_optimization_result(**overrides: Any) -> OptimizationResult:
+    defaults: dict[str, Any] = dict(
+        risk_aware=make_portfolio(),
+        profit_only=make_portfolio(),
+    )
+    defaults.update(overrides)
+    return OptimizationResult(**defaults)

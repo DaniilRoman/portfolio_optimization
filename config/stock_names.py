@@ -788,3 +788,18 @@ vanguard_etf_list = [
 
 # etf_list = ishares_etf_list + vanguard_etf_list
 etf_list = de_etf_list.scalable_capital_etfs
+
+_UNIVERSES: dict[str, list[str]] = {
+    "sp500": sp500,
+    "etf": de_etf_list.scalable_capital_etfs,
+    "de_etf": de_etf_list.de_etfs,
+    "ishares": ishares_etf_list,
+    "vanguard": vanguard_etf_list,
+}
+
+
+def resolve_universe(name: str) -> list[str]:
+    try:
+        return _UNIVERSES[name]
+    except KeyError:
+        raise ValueError(f"Unknown UNIVERSE: {name!r}. Expected one of: {sorted(_UNIVERSES)}")

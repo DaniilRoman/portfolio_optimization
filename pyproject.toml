@@ -23,6 +23,7 @@ pydantic-settings = ">=2.0"
 pytest = "^8.0.0"
 ruff = "^0.9"
 mypy = "^1.0"
+pre-commit = "^4.0"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

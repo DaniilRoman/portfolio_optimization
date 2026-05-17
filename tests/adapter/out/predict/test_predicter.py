@@ -1,13 +1,16 @@
 """Tests for predicter (GARCH-based)."""
 
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from config.configuration import settings
 from src.adapter.out.predict import predicter
 from src.logic.data.forecast import Forecast
+from tests.factories import make_forecast
 
 
 def create_test_data(days: int = 365 * 5, start_date: datetime | None = None) -> pd.DataFrame:
@@ -122,3 +125,13 @@ def test_drift_makes_yhat_non_flat_on_trending_series():
     last_price = float(data["y"].iloc[-1])
     assert future_yhat[-1] > last_price, "expected yhat to drift up on an uptrending series"
     assert (np.diff(future_yhat) > 0).all(), "expected monotonically increasing yhat under positive drift"
+
+
+@pytest.mark.parametrize("backend", predicter._BACKENDS.keys())
+def test_dispatcher_routes_to_every_backend(backend: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Each registered backend key must be reachable through the dispatcher and return a Forecast."""
+    monkeypatch.setattr(settings, "PREDICTER", backend)
+    expected = make_forecast()
+    with patch(f"src.adapter.out.predict.predicter_{backend}.predict", return_value=expected):
+        result = predicter.predict(create_test_data(days=30), predict_period=5)
+    assert result is expected

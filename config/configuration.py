@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     APP_SCRIPT_ID: str
     PREDICTER: Literal["garch", "prophet"] = "garch"
     OPTIMIZER: Literal["ga", "cvxpy"] = "ga"
+    UNIVERSE: Literal["sp500", "etf", "de_etf", "ishares", "vanguard"] = "etf"
     ga: GASettings = GASettings()
     cvxpy: CVXPYSettings = CVXPYSettings()
 
