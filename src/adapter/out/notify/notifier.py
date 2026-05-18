@@ -1,4 +1,5 @@
 """Sends analysis results to a Telegram chat via telepot; handles text messages and photo albums with chunking."""
+
 import logging
 import re
 
@@ -23,7 +24,12 @@ def notify(result: AnalysisReport) -> None:
         print(f"Stock {result.asset.stock_name} is not growing - will be skipped")
         return
     if not settings.TELEGRAM_ENABLED:
-        logging.info("[dry-run] notify: %s → %s %s", result.asset.ticker_symbol, result.forecast.predict_price, result.asset.currency)
+        logging.info(
+            "[dry-run] notify: %s → %s %s",
+            result.asset.ticker_symbol,
+            result.forecast.predict_price,
+            result.asset.currency,
+        )
         return
     msg_to_send = __to_msg(result)
     first_photo_to_send = open(result.forecast.two_year_file_name, "rb")
@@ -117,7 +123,9 @@ def __to_msg(result: AnalysisReport) -> str:
     standard_deviation = f"Standard Deviation: {m.standard_deviation}\n" if m.standard_deviation else ""
     dividend_yield = f"Dividend Yield: {m.dividend_yield}\n" if m.dividend_yield else ""
     average_daily_volume = f"Average Volume: {m.average_daily_volume}\n" if m.average_daily_volume else ""
-    assets_under_management = f"Assets Under Management: {a.assets_under_management}\n" if a.assets_under_management else ""
+    assets_under_management = (
+        f"Assets Under Management: {a.assets_under_management}\n" if a.assets_under_management else ""
+    )
     expense_ratio = f"Expense Ratio: {a.expense_ratio}\n" if a.expense_ratio else ""
     description = f"Description: {a.description}\n" if a.description else ""
 
@@ -185,14 +193,16 @@ def __format_portfolio(portfolio: Portfolio) -> str:
 
 
 def __format_optimization_result(result: OptimizationResult) -> str:
-    return "\n".join([
-        "📊 *Portfolio Optimization Results*",
-        "",
-        "⚠️ **Risk-Aware Optimization** (Minimizes risk while maximizing profit)",
-        "",
-        __format_portfolio(result.risk_aware),
-        "",
-        "📈 **Profit-Only Optimization** (Maximizes profit only)",
-        "",
-        __format_portfolio(result.profit_only),
-    ])
+    return "\n".join(
+        [
+            "📊 *Portfolio Optimization Results*",
+            "",
+            "⚠️ **Risk-Aware Optimization** (Minimizes risk while maximizing profit)",
+            "",
+            __format_portfolio(result.risk_aware),
+            "",
+            "📈 **Profit-Only Optimization** (Maximizes profit only)",
+            "",
+            __format_portfolio(result.profit_only),
+        ]
+    )

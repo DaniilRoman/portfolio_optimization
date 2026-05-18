@@ -1,4 +1,5 @@
 """RiskModel protocol: computes a covariance matrix from price history."""
+
 from typing import Protocol
 
 import numpy as np

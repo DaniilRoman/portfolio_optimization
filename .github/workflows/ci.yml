@@ -28,19 +28,5 @@ jobs:
           key: poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: poetry-
 
-      - name: Install dependencies
-        run: poetry install
-
-      - name: Lint (ruff)
-        run: poetry run ruff check .
-
-      - name: Type check (mypy)
-        run: poetry run mypy src tests
-
-      - name: Run tests
-        run: poetry run pytest
-        env:
-          TELEGRAM_TO: "dummy"
-          TELEGRAM_TOKEN: "dummy"
-          GET_AND_INCREMENT_COUNTER_URL: "http://localhost"
-          APP_SCRIPT_ID: "dummy"
+      - name: Run build.sh
+        run: bash build.sh

@@ -1,4 +1,5 @@
 """Ledoit-Wolf shrinkage covariance estimator for portfolio optimization."""
+
 import numpy as np
 import pandas as pd
 from sklearn.covariance import LedoitWolf
@@ -25,7 +26,7 @@ def compute_covariance(prices: pd.DataFrame) -> np.ndarray:
     log_returns = np.log(prices / prices.shift(1)).dropna()
     lw = LedoitWolf()
     lw.fit(log_returns.to_numpy(dtype=float))
-    return lw.covariance_ * _TRADING_DAYS
+    return np.asarray(lw.covariance_ * _TRADING_DAYS)
 
 
 class LedoitWolfCovarianceModel:

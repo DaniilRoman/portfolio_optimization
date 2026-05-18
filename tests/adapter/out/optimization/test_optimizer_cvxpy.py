@@ -13,18 +13,44 @@ def _make_stocks():
     sector_allocations = [
         {"Technology": 0.90, "Healthcare": 0.10},
         {"Technology": 0.25, "Healthcare": 0.20, "Financials": 0.20, "Consumer": 0.20, "Industrials": 0.15},
-        {"Technology": 0.15, "Healthcare": 0.15, "Financials": 0.15, "Consumer": 0.15, "Industrials": 0.15,
-         "Utilities": 0.10, "Energy": 0.10, "Materials": 0.05},
+        {
+            "Technology": 0.15,
+            "Healthcare": 0.15,
+            "Financials": 0.15,
+            "Consumer": 0.15,
+            "Industrials": 0.15,
+            "Utilities": 0.10,
+            "Energy": 0.10,
+            "Materials": 0.05,
+        },
         {"Technology": 0.95, "Healthcare": 0.05},
         {"Technology": 0.60, "Healthcare": 0.40},
     ]
     top_holdings_list = [
         np.array([["Apple Inc", 0.25], ["Microsoft Corp", 0.20], ["NVIDIA Corp", 0.15]]),
-        np.array([["Apple Inc", 0.08], ["Microsoft Corp", 0.07], ["Amazon.com Inc", 0.06],
-                  ["Alphabet Inc", 0.05], ["Tesla Inc", 0.04], ["Meta Platforms", 0.03]]),
-        np.array([["Apple Inc", 0.04], ["Microsoft Corp", 0.04], ["Amazon.com Inc", 0.03],
-                  ["Alphabet Inc", 0.03], ["Johnson & Johnson", 0.03], ["JPMorgan Chase", 0.03],
-                  ["Procter & Gamble", 0.03], ["Exxon Mobil", 0.03], ["Walmart", 0.03]]),
+        np.array(
+            [
+                ["Apple Inc", 0.08],
+                ["Microsoft Corp", 0.07],
+                ["Amazon.com Inc", 0.06],
+                ["Alphabet Inc", 0.05],
+                ["Tesla Inc", 0.04],
+                ["Meta Platforms", 0.03],
+            ]
+        ),
+        np.array(
+            [
+                ["Apple Inc", 0.04],
+                ["Microsoft Corp", 0.04],
+                ["Amazon.com Inc", 0.03],
+                ["Alphabet Inc", 0.03],
+                ["Johnson & Johnson", 0.03],
+                ["JPMorgan Chase", 0.03],
+                ["Procter & Gamble", 0.03],
+                ["Exxon Mobil", 0.03],
+                ["Walmart", 0.03],
+            ]
+        ),
         np.array([["Tesla Inc", 0.50], ["Rivian", 0.20], ["Lucid", 0.15]]),
         np.array([["Apple Inc", 0.15], ["Microsoft Corp", 0.12], ["Amazon.com Inc", 0.10]]),
     ]
@@ -37,18 +63,20 @@ def _make_stocks():
     ]
     stocks = []
     for idx, (ticker, name, cur, pred, std, div, exp) in enumerate(params):
-        stocks.append(make_stock_data(
-            ticker_symbol=ticker,
-            stock_name=name,
-            current_price=cur,
-            predict_price=pred,
-            standard_deviation=std,
-            beta=1.0 + (std - 0.15) * 2,
-            dividend_yield=div,
-            expense_ratio=exp,
-            sector_allocation=sector_allocations[idx],
-            top_holdings=top_holdings_list[idx],
-        ))
+        stocks.append(
+            make_stock_data(
+                ticker_symbol=ticker,
+                stock_name=name,
+                current_price=cur,
+                predict_price=pred,
+                standard_deviation=std,
+                beta=1.0 + (std - 0.15) * 2,
+                dividend_yield=div,
+                expense_ratio=exp,
+                sector_allocation=sector_allocations[idx],
+                top_holdings=top_holdings_list[idx],
+            )
+        )
     return stocks
 
 

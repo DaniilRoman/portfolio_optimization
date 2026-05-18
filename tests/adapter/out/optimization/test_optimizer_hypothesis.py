@@ -5,6 +5,7 @@ Tests three invariants regardless of random inputs:
   2. Each allocation's total_cost equals quantity * current_price.
   3. optimize never returns a portfolio whose total cost exceeds the budget.
 """
+
 from unittest.mock import patch
 
 from hypothesis import HealthCheck, given
@@ -27,6 +28,7 @@ _rate = st.floats(min_value=0.0, max_value=0.05, allow_nan=False, allow_infinity
 # --------------------------------------------------------------------------
 # Composite strategies
 # --------------------------------------------------------------------------
+
 
 @st.composite
 def _portfolio_entries(draw: st.DrawFn) -> list[tuple[AnalysisReport, int, float]]:
@@ -67,6 +69,7 @@ def _stocks_list(draw: st.DrawFn) -> list[AnalysisReport]:
 # Pure-function invariants: _build_portfolio
 # --------------------------------------------------------------------------
 
+
 @given(_portfolio_entries())
 @h_settings(max_examples=60, deadline=None)
 def test_build_portfolio_quantities_positive(entries: list[tuple[AnalysisReport, int, float]]) -> None:
@@ -79,9 +82,7 @@ def test_build_portfolio_quantities_positive(entries: list[tuple[AnalysisReport,
     exps = [s.asset.expense_ratio for s in stocks]
     tickers = [s.asset.ticker_symbol for s in stocks]
 
-    portfolio = optimizer._build_portfolio(
-        best_individual, stocks, prices, predicted, divs, exps, tickers
-    )
+    portfolio = optimizer._build_portfolio(best_individual, stocks, prices, predicted, divs, exps, tickers)
     for alloc in portfolio.allocations:
         assert alloc.quantity >= 1
 
@@ -98,9 +99,7 @@ def test_build_portfolio_cost_equals_shares_times_price(entries: list[tuple[Anal
     exps = [s.asset.expense_ratio for s in stocks]
     tickers = [s.asset.ticker_symbol for s in stocks]
 
-    portfolio = optimizer._build_portfolio(
-        best_individual, stocks, prices, predicted, divs, exps, tickers
-    )
+    portfolio = optimizer._build_portfolio(best_individual, stocks, prices, predicted, divs, exps, tickers)
     price_by_ticker = dict(zip(tickers, prices))
     for alloc in portfolio.allocations:
         expected_cost = alloc.quantity * price_by_ticker[alloc.asset.ticker_symbol]
@@ -110,6 +109,7 @@ def test_build_portfolio_cost_equals_shares_times_price(entries: list[tuple[Anal
 # --------------------------------------------------------------------------
 # End-to-end invariants: optimize
 # --------------------------------------------------------------------------
+
 
 def _run_optimize(stocks: list[AnalysisReport], budget: float) -> OptimizationResult:
     """Run optimizer with mocked network call and minimal GA settings."""

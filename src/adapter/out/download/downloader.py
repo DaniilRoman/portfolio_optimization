@@ -1,4 +1,5 @@
 """Downloads OHLCV price history and ticker metadata from yfinance; outputs StockInfo with TickerMetadata."""
+
 import json
 import logging
 import urllib
@@ -47,7 +48,9 @@ def _extract_ticker_metadata(stock: yf.Ticker) -> TickerMetadata:
         currency=info.get("currency") or "Unknown",
         industry=info.get("industry") or "",
         beta=float(info.get("beta") or info.get("beta3Year") or 0),
-        dividend_yield=float(info.get("yield") or info.get("dividendYield") or info.get("trailingAnnualDividendYield") or 0),
+        dividend_yield=float(
+            info.get("yield") or info.get("dividendYield") or info.get("trailingAnnualDividendYield") or 0
+        ),
         total_assets=float(info.get("totalAssets") or info.get("netAssets") or 0),
         expense_ratio=float(expense_ratio),
         average_volume=float(info.get("averageVolume") or 0),

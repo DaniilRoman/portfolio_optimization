@@ -1,4 +1,5 @@
 """Routes optimize() calls to the GA or CVXPY backend based on settings.OPTIMIZER."""
+
 import importlib
 
 import numpy as np
@@ -6,7 +7,6 @@ import pandas as pd
 
 from config.configuration import settings
 from src.domain.data.data import OptimizationResult, StockData
-
 
 _OPTIMIZERS: dict[str, str] = {
     "ga": ".optimizer",
@@ -28,6 +28,7 @@ def optimize(
         sigma: np.ndarray | None = None
         if price_history is not None and price_history.shape[1] >= 2:
             from src.adapter.out.risk.covariance import compute_covariance
+
             sigma = compute_covariance(price_history)
         return module.optimize(stocks, budget, sigma=sigma)  # type: ignore[no-any-return]
 

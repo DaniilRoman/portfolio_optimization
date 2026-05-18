@@ -60,7 +60,9 @@ class TestSendTextMessage:
             notifier.send_text_message("hello world")
 
         mock_bot.getMe.assert_called_once()
-        mock_bot.sendMessage.assert_called_once_with(chat_id=mock_bot.sendMessage.call_args[1]["chat_id"], text="hello world")
+        mock_bot.sendMessage.assert_called_once_with(
+            chat_id=mock_bot.sendMessage.call_args[1]["chat_id"], text="hello world"
+        )
 
     def test_passes_correct_text(self) -> None:
         mock_bot = MagicMock()

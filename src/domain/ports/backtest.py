@@ -1,4 +1,5 @@
 """WeightProvider port — any callable that maps price history to portfolio weights."""
+
 from typing import Protocol
 
 import pandas as pd

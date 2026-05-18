@@ -1,4 +1,5 @@
 """Genetic-algorithm portfolio optimizer using DEAP; reads tuning parameters from settings.ga; outputs OptimizationResult."""
+
 import random
 from collections.abc import Callable
 from typing import Any
@@ -26,30 +27,30 @@ def __gen_one_individual(
         # Try to generate individuals that respect budget
         individual = [0] * len(max_count_data)
         remaining_budget = budget
-        
+
         # Try to add shares for each ETF, starting with random order
         indices = list(range(len(max_count_data)))
         random.shuffle(indices)
-        
+
         for i in indices:
             if max_count_data[i] == 0:
                 continue
-                
+
             max_shares = max_count_data[i]
             price = current_prices[i]
-            
+
             if price <= 0:
                 continue
-                
+
             # Calculate maximum shares we can afford with remaining budget
             max_affordable = min(max_shares, int(remaining_budget / price))
-            
+
             if max_affordable > 0:
                 # Randomly choose number of shares (could be 0)
                 shares = random.randint(0, max_affordable)
                 individual[i] = shares
                 remaining_budget -= shares * price
-                
+
                 if remaining_budget <= 0:
                     break
         return individual
@@ -82,21 +83,21 @@ def __calculate_volatility_risk(
     Returns normalized risk score (higher = more volatile = worse).
     """
     total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
-    
+
     if total_value == 0:
         return 0.0
-    
+
     # Calculate weighted average of ETF standard deviations and forecast volatility
     weighted_volatility = 0.0
     weighted_forecast_volatility = 0.0
-    
+
     for i, shares in enumerate(individual):
         if shares == 0:
             continue
-        
+
         etf_value = shares * current_prices[i]
         weight = etf_value / total_value
-        
+
         # Historical volatility (standard deviation)
         std_dev = stocks[i].market.standard_deviation
 
@@ -121,7 +122,7 @@ def __calculate_volatility_risk(
 
     # Combine historical volatility and forecast volatility
     combined_risk = (0.7 * weighted_volatility) + (0.3 * weighted_forecast_volatility)
-    
+
     return combined_risk
 
 
@@ -142,34 +143,34 @@ def __calculate_sector_concentration_risk(
 
     # Aggregate sector exposure across all ETFs
     sector_exposure: dict[str, float] = {}
-    
+
     for i, shares in enumerate(individual):
         if shares == 0:
             continue
-        
+
         stock = stocks[i]
         etf_value = shares * current_prices[i]
         etf_weight = etf_value / total_value
-        
+
         # Add this ETF's sector allocations to total exposure
         for sector, allocation in stock.sector_allocation.items():
             sector_exposure[sector] = sector_exposure.get(sector, 0.0) + (etf_weight * allocation)
-    
+
     if not sector_exposure:
         return 0.0
-    
+
     # Calculate concentration penalties
     max_sector_exposure = max(sector_exposure.values())
-    
+
     # Herfindahl index (sum of squared concentrations)
     herfindahl = sum(exp**2 for exp in sector_exposure.values())
-    
+
     # Penalty for exceeding max concentration
     excess_concentration = max(0, max_sector_exposure - settings.ga.max_sector_concentration)
-    
+
     # Combined risk score (normalized to 0-1 scale)
-    concentration_risk = (herfindahl + excess_concentration * 10)
-    
+    concentration_risk = herfindahl + excess_concentration * 10
+
     return concentration_risk
 
 
@@ -189,42 +190,42 @@ def __calculate_company_overlap_risk(
 
     # Aggregate company exposure across all ETFs
     company_exposure: dict[str, float] = {}
-    
+
     for i, shares in enumerate(individual):
         if shares == 0:
             continue
-        
+
         stock = stocks[i]
         etf_value = shares * current_prices[i]
         etf_weight = etf_value / total_value
-        
+
         # Parse top_holdings (np.ndarray format: rows of [company_name, weight])
         for holding in stock.top_holdings:
             try:
                 # holding is a numpy array row: [company_name, weight]
                 company = holding[0]
                 weight = float(holding[1])
-                
+
                 # Total exposure to this company
                 company_exposure[company] = company_exposure.get(company, 0.0) + (etf_weight * weight)
             except (IndexError, ValueError, TypeError):
                 continue
-    
+
     if not company_exposure:
         return 0.0
-    
+
     # Calculate risk metrics
     max_company_exposure = max(company_exposure.values())
-    
+
     # Count companies with >5% exposure (high concentration)
     high_concentration_count = sum(1 for exp in company_exposure.values() if exp > 0.05)
-    
+
     # Herfindahl index for company concentration
     herfindahl = sum(exp**2 for exp in company_exposure.values())
-    
+
     # Combined risk (normalized)
     overlap_risk = max_company_exposure + (high_concentration_count * 0.01) + herfindahl
-    
+
     return overlap_risk
 
 
@@ -240,7 +241,7 @@ def __create_toolbox(
         creator.create("Individual", list, fitness=creator.FitnessFunc)
 
     toolbox = Toolbox()
-    toolbox.register("evaluate", eval_func)    
+    toolbox.register("evaluate", eval_func)
     toolbox.register("mate", tools.cxUniform, indpb=settings.ga.mate_indpb)
     toolbox.register("mutate", mutFlipBit, indpb=settings.ga.mutation_indpb)
     toolbox.register("select", tools.selTournament, tournsize=settings.ga.tournament_size)
@@ -256,7 +257,9 @@ def __optimize_internal(
     for ind, fit in zip(pop, fitnesses, strict=False):
         ind.fitness.values = fit
 
-    return algorithms.eaSimple(pop, toolbox, cxpb=settings.ga.crossover_rate, mutpb=settings.ga.mutation_rate, ngen=settings.ga.generations)
+    return algorithms.eaSimple(
+        pop, toolbox, cxpb=settings.ga.crossover_rate, mutpb=settings.ga.mutation_rate, ngen=settings.ga.generations
+    )
 
 
 def _prepare_stock_data(
@@ -268,7 +271,7 @@ def _prepare_stock_data(
     predicted_prices = [stock.forecast.predict_price for stock in stocks]
     dividend_yields = [stock.market.dividend_yield for stock in stocks]
     expense_ratios = [stock.asset.expense_ratio for stock in stocks]
-    
+
     return tickers, current_prices, predicted_prices, dividend_yields, expense_ratios
 
 
@@ -284,7 +287,7 @@ def _calculate_max_shares(current_prices: list[float], max_per_etf_budget: float
             # Also consider reasonable upper limit
             max_shares = min(max_by_budget, 100)  # Cap at 100 shares max
         max_shares_per_stock.append(max_shares)
-    
+
     return max_shares_per_stock
 
 
@@ -297,7 +300,7 @@ def _create_ownership_weights(tickers: list[str], etf_map: dict[str, int]) -> li
         # Weight = 1 / (1 + current_count) - more ownership = lower weight
         weight = 1.0 / (1.0 + current_count)
         ownership_weights.append(weight)
-    
+
     return ownership_weights
 
 
@@ -316,7 +319,7 @@ def _create_evaluator_factory(
     def evaluate_func(individual: Any) -> tuple[float, float]:
         # Calculate cost and predicted profit
         total_cost = sum(x * y for x, y in zip(current_prices, individual, strict=False))
-        
+
         # Calculate net profit per stock: (capital_gain + dividend_income) - (cost * expense_ratio)
         total_net_profit = 0.0
         for i, shares in enumerate(individual):
@@ -331,62 +334,55 @@ def _create_evaluator_factory(
 
             expected_gain = predicted_price - current_price
             capital_gain = expected_gain * shares
-            
+
             # Dividend income (assuming annual yield)
             dividend_income = current_price * dividend_yield * shares
-            
+
             # Total cost of investment
             cost = current_price * shares
-            
+
             # Total gross profit
             gross_profit = capital_gain + dividend_income
-            
+
             # Apply expense ratio penalty (annual fee on assets under management)
             # Expense reduces profit: fee = cost * expense_ratio
             expense_fee = cost * expense_ratio
             net_profit = gross_profit - expense_fee
-            
+
             # Apply ownership weight for diversification
             weighted_profit = net_profit * ownership_weight
             total_net_profit += weighted_profit
-        
+
         # Penalize if cost exceeds budget
         if total_cost > budget:
             # Heavy penalty for exceeding budget
             return 100000000000, -10000000000
-        
+
         budget_deviation = abs(budget - total_cost)
         if include_risk:
             # Calculate risk components
             volatility_risk = __calculate_volatility_risk(individual, stocks, current_prices)
             sector_risk = __calculate_sector_concentration_risk(individual, stocks, current_prices)
             overlap_risk = __calculate_company_overlap_risk(individual, stocks, current_prices)
-            
+
             # Combined risk score with weights: 40% volatility, 35% sector, 25% overlap
             # Scale risk to be comparable to profit values (profit is in euros, risk is 0-1 scale)
             # Multiply by a scaling factor to make risk matter more in the optimization
             risk_scaling_factor = 20.0  # Reduced from 100.0 to better balance profit vs risk
-            total_risk = risk_scaling_factor * (
-                0.25 * volatility_risk +
-                0.4 * sector_risk +
-                0.35 * overlap_risk
-            )
-            
+            total_risk = risk_scaling_factor * (0.25 * volatility_risk + 0.4 * sector_risk + 0.35 * overlap_risk)
+
             # For risk-aware: maximize (profit - risk_penalty)
             adjusted_profit = total_net_profit - total_risk
             return budget_deviation, adjusted_profit
         else:
             # Profit-only optimization: maximize profit
             return budget_deviation, total_net_profit
-    
+
     return evaluate_func
 
 
 def _run_genetic_algorithm(
-    stocks: list[StockData],
-    budget: float,
-    max_per_etf_budget: float,
-    include_risk: bool = True
+    stocks: list[StockData], budget: float, max_per_etf_budget: float, include_risk: bool = True
 ) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     """Run genetic algorithm optimization with specified risk inclusion."""
     # Get current ETF ownership
@@ -399,22 +395,28 @@ def _run_genetic_algorithm_with_map(
     budget: float,
     max_per_etf_budget: float,
     etf_map: dict[str, int],
-    include_risk: bool = True
+    include_risk: bool = True,
 ) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     """Run genetic algorithm optimization with pre-fetched ETF ownership map."""
     # Prepare data
     tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
-    
+
     # Calculate constraints and weights
     max_shares_per_stock = _calculate_max_shares(current_prices, max_per_etf_budget)
     ownership_weights = _create_ownership_weights(tickers, etf_map)
-    
+
     # Create evaluator
     evaluator = _create_evaluator_factory(
-        current_prices, predicted_prices, dividend_yields, expense_ratios,
-        ownership_weights, stocks, budget, include_risk
+        current_prices,
+        predicted_prices,
+        dividend_yields,
+        expense_ratios,
+        ownership_weights,
+        stocks,
+        budget,
+        include_risk,
     )
-    
+
     # Create mutation function
     def mutFlipBit(individual: Any, indpb: float) -> tuple[Any]:
         for i in range(len(individual)):
@@ -425,15 +427,15 @@ def _run_genetic_algorithm_with_map(
     # Create individual generator
     def gen_one_individual_wrapper() -> list[int]:
         return __gen_one_individual(max_shares_per_stock, current_prices, budget)
-    
+
     # Select weights based on risk inclusion
     weights = FUN_WEIGHTS_RISK_AWARE if include_risk else FUN_WEIGHTS_PROFIT_ONLY
-    
+
     # Run optimization
     toolbox = __create_toolbox(evaluator, weights, mutFlipBit)
     best_solution = __optimize_internal(toolbox, gen_one_individual_wrapper)
     best_individual = tools.selBest(best_solution[0], 1)[0]
-    
+
     return best_individual, stocks, current_prices, predicted_prices, dividend_yields, expense_ratios, tickers
 
 
@@ -455,17 +457,19 @@ def _build_portfolio(
             dividend_income = current_prices[i] * dividend_yields[i] * shares
             expense_fee = cost * expense_ratios[i]
             net_profit = capital_gain + dividend_income - expense_fee
-            allocations.append(Allocation(
-                asset=stocks[i].asset,
-                quantity=shares,
-                total_cost=cost,
-                net_profit=net_profit,
-                capital_gain=capital_gain,
-                dividend_income=dividend_income,
-                expense_fee=expense_fee,
-                expense_ratio=expense_ratios[i],
-                forecast_volatility=stocks[i].forecast.forecast_volatility,
-            ))
+            allocations.append(
+                Allocation(
+                    asset=stocks[i].asset,
+                    quantity=shares,
+                    total_cost=cost,
+                    net_profit=net_profit,
+                    capital_gain=capital_gain,
+                    dividend_income=dividend_income,
+                    expense_fee=expense_fee,
+                    expense_ratio=expense_ratios[i],
+                    forecast_volatility=stocks[i].forecast.forecast_volatility,
+                )
+            )
 
     allocations.sort(key=lambda a: a.net_profit, reverse=True)
 
@@ -497,7 +501,7 @@ def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: 
         profit_only=_build_portfolio(profit_individual, p_stocks, p_prices, p_predicted, p_div, p_exp, p_tickers),
     )
 
+
 def __get_etf_map() -> dict[str, int]:
     etf_to_count = requests.get(settings.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})
     return etf_to_count.json()  # type: ignore[no-any-return]
-  

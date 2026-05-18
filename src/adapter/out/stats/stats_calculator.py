@@ -1,4 +1,5 @@
 """Fetches and increments the portfolio-run counter via the external counter URL; outputs a count used by the notifier."""
+
 import requests
 
 from config.configuration import settings

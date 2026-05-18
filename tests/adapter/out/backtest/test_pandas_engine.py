@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from src.adapter.out.backtest.pandas_engine import simulate
 from src.domain.data.backtest import BacktestReport
@@ -25,9 +24,7 @@ def _make_rf(n: int = 300, rate: float = 0.05) -> pd.Series:
     return pd.Series(rate, index=dates, name="Rate")
 
 
-def _equal_schedule(
-    prices: pd.DataFrame, rebalance_every: int = 21
-) -> list[tuple[pd.Timestamp, dict[str, float]]]:
+def _equal_schedule(prices: pd.DataFrame, rebalance_every: int = 21) -> list[tuple[pd.Timestamp, dict[str, float]]]:
     tickers = list(prices.columns)
     w = 1.0 / len(tickers)
     weights = {t: w for t in tickers}
@@ -76,8 +73,7 @@ class TestSimulate:
         rf = _make_rf()
         rebalance_idx = list(range(0, len(prices), 50))
         schedule = [
-            (prices.index[i], {"A": float(k % 2 == 0), "B": float(k % 2 == 1)})
-            for k, i in enumerate(rebalance_idx)
+            (prices.index[i], {"A": float(k % 2 == 0), "B": float(k % 2 == 1)}) for k, i in enumerate(rebalance_idx)
         ]
         free = simulate(prices, schedule, rf, transaction_cost=0.0, slippage=0.0)
         costly = simulate(prices, schedule, rf, transaction_cost=0.01, slippage=0.01)

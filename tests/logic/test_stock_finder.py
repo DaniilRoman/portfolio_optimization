@@ -81,7 +81,10 @@ class TestRunCallSequence:
     def test_picks_stock_name_when_none_given(self) -> None:
         with (
             patch("src.application.stock_finder.stock_picker.pick", return_value="SPY") as m_pick,
-            patch("src.application.stock_finder.downloader.download_stock_data", return_value=make_stock_info(historic_data=make_historic_df(800))),
+            patch(
+                "src.application.stock_finder.downloader.download_stock_data",
+                return_value=make_stock_info(historic_data=make_historic_df(800)),
+            ),
             patch("src.application.stock_finder.predicter.predict", return_value=make_forecast()),
             patch("src.application.stock_finder.analyzer.analyses", return_value=make_stock_data()),
             patch("src.application.stock_finder.notifier.notify"),

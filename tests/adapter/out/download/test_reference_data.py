@@ -3,6 +3,7 @@
 All external I/O (yfinance, urllib) is mocked so tests run fully offline.
 Each test that writes to the cache uses tmp_path + monkeypatch.chdir for isolation.
 """
+
 import io
 import zipfile
 from unittest.mock import MagicMock, patch
@@ -19,10 +20,10 @@ from src.adapter.out.download.reference_data import (
     fetch_risk_free_rate,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_yf_hist(n: int = 20, start: str = "2020-01-02") -> pd.DataFrame:
     dates = pd.date_range(start, periods=n, freq="B", tz="America/New_York")
@@ -36,7 +37,7 @@ def _make_fred_csv(series: str = "DGS3MO", n: int = 10) -> bytes:
     dates = pd.bdate_range("2020-01-02", periods=n).strftime("%Y-%m-%d")
     lines = ["DATE," + series] + [f"{d},{1.5 + i * 0.01}" for i, d in enumerate(dates)]
     # Add a "." row to test missing-value handling
-    lines.insert(3, f"{pd.bdate_range('2020-01-02', periods=n+1)[-1].strftime('%Y-%m-%d')},.")
+    lines.insert(3, f"{pd.bdate_range('2020-01-02', periods=n + 1)[-1].strftime('%Y-%m-%d')},.")
     return "\n".join(lines).encode()
 
 
@@ -70,6 +71,7 @@ def _zip_bytes(filename: str, content: str) -> bytes:
 # fetch_benchmark
 # ---------------------------------------------------------------------------
 
+
 class TestFetchBenchmark:
     @pytest.fixture(autouse=True)
     def _isolate(self, tmp_path, monkeypatch):
@@ -98,6 +100,7 @@ class TestFetchBenchmark:
 # ---------------------------------------------------------------------------
 # fetch_risk_free_rate
 # ---------------------------------------------------------------------------
+
 
 class TestFetchRiskFreeRate:
     @pytest.fixture(autouse=True)
@@ -134,6 +137,7 @@ class TestFetchRiskFreeRate:
 # _parse_ff_csv (unit-level)
 # ---------------------------------------------------------------------------
 
+
 class TestParseFfCsv:
     def test_daily_columns(self):
         content = _make_ff5_csv_content(n_rows=10)
@@ -154,6 +158,7 @@ class TestParseFfCsv:
 # ---------------------------------------------------------------------------
 # fetch_ff_factors
 # ---------------------------------------------------------------------------
+
 
 class TestFetchFfFactors:
     @pytest.fixture(autouse=True)

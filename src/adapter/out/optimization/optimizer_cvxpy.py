@@ -1,4 +1,5 @@
 """Convex portfolio optimizer using CVXPY; solves a risk-adjusted allocation problem subject to budget and concentration constraints."""
+
 from __future__ import annotations
 
 import cvxpy as cp
@@ -113,7 +114,7 @@ def _run_cvxpy_optimization_with_map(
     max_per_etf_budget: float,
     etf_map: dict[str, int],
     include_risk: bool = True,
-    sigma: "np.ndarray | None" = None,
+    sigma: np.ndarray | None = None,
 ) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
     max_shares_per_stock = np.asarray(_calculate_max_shares(current_prices, max_per_etf_budget), dtype=int)
@@ -148,10 +149,9 @@ def _run_cvxpy_optimization_with_map(
             stock.market.beta * 0.15,
         )
 
-    volatility_proxy = np.asarray([
-        _stock_volatility(_stock, float(current_prices_arr[i]))
-        for i, _stock in enumerate(stocks)
-    ], dtype=float)
+    volatility_proxy = np.asarray(
+        [_stock_volatility(_stock, float(current_prices_arr[i])) for i, _stock in enumerate(stocks)], dtype=float
+    )
 
     x = cp.Variable(len(stocks), integer=True)
     value_vector = cp.multiply(current_prices_arr, x)
@@ -175,10 +175,7 @@ def _run_cvxpy_optimization_with_map(
             risk_penalty = cp.quad_form(w, sigma)
         else:
             # Diagonal fallback: HHI-like concentration + vol-weighted concentration
-            risk_penalty = (
-                0.35 * cp.sum_squares(w)
-                + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, w))
-            )
+            risk_penalty = 0.35 * cp.sum_squares(w) + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, w))
             if sector_exposure is not None and sector_exposure.size > 0:
                 risk_penalty += 0.20 * cp.sum_squares(sector_exposure / max(budget, 1e-9))
             if company_exposure is not None and company_exposure.size > 0:
@@ -196,7 +193,11 @@ def _run_cvxpy_optimization_with_map(
         relaxed_value_vector = cp.multiply(current_prices_arr, relaxed_x)
         relaxed_cost = cp.sum(relaxed_value_vector)
         relaxed_profit = mu @ relaxed_x
-        relaxed_constraints: list[cp.Constraint] = [relaxed_x >= 0, relaxed_x <= max_shares_per_stock, relaxed_cost <= budget + 1e-6]
+        relaxed_constraints: list[cp.Constraint] = [
+            relaxed_x >= 0,
+            relaxed_x <= max_shares_per_stock,
+            relaxed_cost <= budget + 1e-6,
+        ]
         if A_sector.size:
             relaxed_constraints.append(A_sector @ relaxed_value_vector <= settings.ga.max_sector_concentration * budget)
         if A_company.size:
@@ -210,9 +211,8 @@ def _run_cvxpy_optimization_with_map(
             if sigma is not None:
                 relaxed_risk_penalty = cp.quad_form(relaxed_w, sigma)
             else:
-                relaxed_risk_penalty = (
-                    0.35 * cp.sum_squares(relaxed_w)
-                    + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, relaxed_w))
+                relaxed_risk_penalty = 0.35 * cp.sum_squares(relaxed_w) + 0.25 * cp.sum_squares(
+                    cp.multiply(volatility_proxy, relaxed_w)
                 )
                 if relaxed_sector is not None and relaxed_sector.size > 0:
                     relaxed_risk_penalty += 0.20 * cp.sum_squares(relaxed_sector / max(budget, 1e-9))
@@ -236,7 +236,7 @@ def optimize(
     stocks: list[StockData],
     budget: float = 50.0,
     max_per_etf_budget: float = 50.0,
-    sigma: "np.ndarray | None" = None,
+    sigma: np.ndarray | None = None,
 ) -> OptimizationResult:
     if max_per_etf_budget is None:
         max_per_etf_budget = min(50.0, budget / 2)

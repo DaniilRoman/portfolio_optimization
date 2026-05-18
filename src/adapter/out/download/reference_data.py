@@ -4,6 +4,7 @@ All results are cached under data/cache/ with vintage-date keys, matching the
 convention established in cache.py. All external I/O goes through three narrow
 entry points (_yf_history, _urlopen_bytes) so tests can mock at the boundary.
 """
+
 import io
 import logging
 import urllib.request
@@ -37,6 +38,7 @@ FF_COLUMNS = ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "Mom"]
 # Internal I/O helpers — thin wrappers so tests can monkeypatch cleanly
 # ---------------------------------------------------------------------------
 
+
 def _yf_history(ticker: str, start: str, end: str) -> pd.DataFrame:
     return yf.Ticker(ticker).history(start=start, end=end, auto_adjust=True, actions=False)
 
@@ -49,6 +51,7 @@ def _urlopen_bytes(url: str) -> bytes:
 # ---------------------------------------------------------------------------
 # Cache helpers
 # ---------------------------------------------------------------------------
+
 
 def _load_ref_cache(root: Path, key: str, vintage_date: date) -> pd.DataFrame | None:
     p = root / f"{key}_{vintage_date}.parquet"
@@ -81,6 +84,7 @@ def _strip_tz(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def fetch_benchmark(
     ticker: str,
@@ -188,6 +192,7 @@ def fetch_ff_factors(
 # FF CSV parsing
 # ---------------------------------------------------------------------------
 
+
 def _fetch_and_parse_ff_zip(url: str, freq: Literal["daily", "monthly"]) -> pd.DataFrame:
     """Download a Kenneth French zip and return the parsed factor DataFrame (raw %)."""
     raw_bytes = _urlopen_bytes(url)
@@ -209,9 +214,7 @@ def _parse_ff_csv(content: str, freq: Literal["daily", "monthly"]) -> pd.DataFra
 
     # Find the header line: FF5 files contain "Mkt-RF"; MOM files contain "Mom"
     header_idx = next(
-        i
-        for i, line in enumerate(lines)
-        if "Mkt-RF" in line or ("Mom" in line and "Date" not in line and i > 0)
+        i for i, line in enumerate(lines) if "Mkt-RF" in line or ("Mom" in line and "Date" not in line and i > 0)
     )
 
     # Collect header + data rows; stop at copyright/annual-summary footer

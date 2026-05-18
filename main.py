@@ -7,7 +7,7 @@ from src.adapter.out.optimization import optimizer_dispatcher as optimizer
 from src.application import stock_finder
 from src.domain.data import data
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     notifier.send_text_message("=================")
 
     analyses_results = []

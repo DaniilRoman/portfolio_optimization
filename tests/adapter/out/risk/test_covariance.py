@@ -1,4 +1,5 @@
 """Tests for the Ledoit-Wolf covariance estimator (§4.1)."""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -120,7 +121,6 @@ class TestComputeCovariance:
 
 class TestLedoitWolfCovarianceModel:
     def test_implements_risk_model_protocol(self):
-        from src.domain.ports.risk_model import RiskModel
         model = LedoitWolfCovarianceModel()
         # Structural check: must have a .cov method matching the protocol
         assert hasattr(model, "cov")

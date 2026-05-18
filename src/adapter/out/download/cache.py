@@ -4,6 +4,7 @@ Cache path: data/cache/prices/{ticker}/1d/{YYYY-MM-DD}.parquet
 The file stores the raw yfinance history DataFrame (Close, Volume, Dividends, Stock Splits).
 vintage_date is the calendar date the data was downloaded, providing reproducibility.
 """
+
 import logging
 from datetime import date
 from pathlib import Path

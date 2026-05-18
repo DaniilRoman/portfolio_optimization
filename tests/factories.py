@@ -105,17 +105,44 @@ def make_forecast_summary(**overrides: Any) -> ForecastSummary:
 def make_stock_data(**overrides: Any) -> AnalysisReport:
     """Build an AnalysisReport accepting flat field overrides for backward compat."""
     # Pull flat-kwarg overrides that belong to sub-objects
-    asset_fields = {k: overrides.pop(k) for k in list(overrides) if k in {
-        "ticker_symbol", "stock_name", "currency", "industry", "description",
-        "expense_ratio", "assets_under_management",
-    }}
-    market_fields = {k: overrides.pop(k) for k in list(overrides) if k in {
-        "current_price", "beta", "standard_deviation", "dividend_yield", "average_daily_volume",
-    }}
-    forecast_fields = {k: overrides.pop(k) for k in list(overrides) if k in {
-        "predict_price", "prediction_uncertainty", "forecast_volatility",
-        "two_year_file_name", "five_year_file_name",
-    }}
+    asset_fields = {
+        k: overrides.pop(k)
+        for k in list(overrides)
+        if k
+        in {
+            "ticker_symbol",
+            "stock_name",
+            "currency",
+            "industry",
+            "description",
+            "expense_ratio",
+            "assets_under_management",
+        }
+    }
+    market_fields = {
+        k: overrides.pop(k)
+        for k in list(overrides)
+        if k
+        in {
+            "current_price",
+            "beta",
+            "standard_deviation",
+            "dividend_yield",
+            "average_daily_volume",
+        }
+    }
+    forecast_fields = {
+        k: overrides.pop(k)
+        for k in list(overrides)
+        if k
+        in {
+            "predict_price",
+            "prediction_uncertainty",
+            "forecast_volatility",
+            "two_year_file_name",
+            "five_year_file_name",
+        }
+    }
 
     asset = overrides.pop("asset", make_asset(**asset_fields))
     market = overrides.pop("market", make_market_snapshot(**market_fields))

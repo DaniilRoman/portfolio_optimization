@@ -104,16 +104,18 @@ class TestMainPipelineHappyPath:
     def test_optimizer_produces_optimization_result(self) -> None:
         from tests.factories import make_stock_data
 
-        stocks = [make_stock_data(
-            ticker_symbol="TST",
-            current_price=350.0,
-            predict_price=380.0,
-            two_year_file_name="/tmp/x.png",
-            five_year_file_name="/tmp/y.png",
-            top_holdings=np.array([["AAPL", 0.07]]),
-            sector_allocation={"technology": 0.60},
-            description="Fixture ETF",
-        )]
+        stocks = [
+            make_stock_data(
+                ticker_symbol="TST",
+                current_price=350.0,
+                predict_price=380.0,
+                two_year_file_name="/tmp/x.png",
+                five_year_file_name="/tmp/y.png",
+                top_holdings=np.array([["AAPL", 0.07]]),
+                sector_allocation={"technology": 0.60},
+                description="Fixture ETF",
+            )
+        ]
 
         mock_response = MagicMock()
         mock_response.content = b"0"

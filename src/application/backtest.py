@@ -10,6 +10,7 @@ The harness:
   4. Passes the weight schedule to the pandas P&L engine.
   5. Returns (and optionally prints) a BacktestReport.
 """
+
 import argparse
 import logging
 
@@ -56,9 +57,7 @@ def run_walk_forward(
     """
     dates = prices.index
     if len(dates) <= train_window_days:
-        raise ValueError(
-            f"Price history ({len(dates)} rows) is shorter than train_window_days={train_window_days}."
-        )
+        raise ValueError(f"Price history ({len(dates)} rows) is shorter than train_window_days={train_window_days}.")
 
     schedule: list[tuple[pd.Timestamp, dict[str, float]]] = []
     i = train_window_days

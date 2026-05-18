@@ -3,6 +3,7 @@
 Chosen over vectorbt to avoid a heavy numba dependency — rebalance frequency
 is monthly/quarterly so a Python date loop is fast enough in practice.
 """
+
 import numpy as np
 import pandas as pd
 
@@ -56,10 +57,7 @@ def simulate(
         if ts in schedule_map:
             new_weights = schedule_map[ts]
             all_tickers = set(new_weights) | set(current_weights)
-            turnover = (
-                sum(abs(new_weights.get(t, 0.0) - current_weights.get(t, 0.0)) for t in all_tickers)
-                / 2.0
-            )
+            turnover = sum(abs(new_weights.get(t, 0.0) - current_weights.get(t, 0.0)) for t in all_tickers) / 2.0
             portfolio_value *= 1.0 - total_cost_rate * turnover
             current_weights = new_weights
             turnovers.append(turnover)
@@ -72,11 +70,7 @@ def simulate(
             continue
 
         row = returns.loc[date]
-        port_ret = sum(
-            w * float(row.get(t, 0.0))
-            for t, w in current_weights.items()
-            if t in returns.columns
-        )
+        port_ret = sum(w * float(row.get(t, 0.0)) for t, w in current_weights.items() if t in returns.columns)
         portfolio_value *= 1.0 + port_ret
         equity_values.append(portfolio_value)
         equity_dates.append(ts)
@@ -107,13 +101,15 @@ def _compute_metrics(
     n_years = n / _TRADING_DAYS
     realised_return = (1.0 + total_return) ** (1.0 / n_years) - 1.0 if n_years > 0 else 0.0
 
-    vol = float(daily_returns.std()) * (_TRADING_DAYS ** 0.5)
+    vol = float(daily_returns.std()) * (_TRADING_DAYS**0.5)
 
     excess = daily_returns - daily_rf
-    sharpe = (float(excess.mean()) / float(daily_returns.std())) * (_TRADING_DAYS ** 0.5) if daily_returns.std() > 0 else 0.0
+    sharpe = (
+        (float(excess.mean()) / float(daily_returns.std())) * (_TRADING_DAYS**0.5) if daily_returns.std() > 0 else 0.0
+    )
 
     neg_rets = daily_returns[daily_returns < 0]
-    downside_std = float(neg_rets.std()) * (_TRADING_DAYS ** 0.5) if len(neg_rets) > 1 else 1e-9
+    downside_std = float(neg_rets.std()) * (_TRADING_DAYS**0.5) if len(neg_rets) > 1 else 1e-9
     sortino = float(excess.mean()) * _TRADING_DAYS / downside_std
 
     cumulative = (1.0 + daily_returns).cumprod()

@@ -1,4 +1,5 @@
 """Shared date-arithmetic and rounding utilities used across adapters."""
+
 import datetime as _dt
 from datetime import datetime, timedelta
 

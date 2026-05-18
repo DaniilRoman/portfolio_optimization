@@ -1,4 +1,5 @@
 """Facebook Prophet price forecaster; fits a trend+seasonality model on daily closes and returns a Forecast with uncertainty bands."""
+
 import pandas as pd
 from pandas import DataFrame
 from prophet import Prophet
@@ -9,7 +10,7 @@ from src.domain.data.forecast import Forecast
 def predict(
     data: DataFrame,
     predict_period: int = 30,
-    seasonality_mode: str = 'additive',
+    seasonality_mode: str = "additive",
     changepoint_prior_scale: float = 0.05,
     seasonality_prior_scale: float = 0.1,
     holidays_prior_scale: float = 10.0,
@@ -28,9 +29,9 @@ def predict(
     uncertainty_range, volatility_forecast (= 0 for Prophet).
     """
     data = data.reset_index(drop=True).copy()
-    data['ds'] = pd.to_datetime(data['ds'], errors='coerce')
-    data['y'] = pd.to_numeric(data['y'], errors='coerce')
-    data = data.dropna(subset=['ds', 'y'])
+    data["ds"] = pd.to_datetime(data["ds"], errors="coerce")
+    data["y"] = pd.to_numeric(data["y"], errors="coerce")
+    data = data.dropna(subset=["ds", "y"])
 
     if len(data) < 2:
         raise ValueError("Insufficient data for prediction. Need at least 2 data points.")
@@ -48,21 +49,21 @@ def predict(
     )
 
     if add_holidays:
-        prophet.add_country_holidays(country_name='US')
+        prophet.add_country_holidays(country_name="US")
 
     prophet.fit(data)
 
-    future = prophet.make_future_dataframe(periods=predict_period, freq='B')
+    future = prophet.make_future_dataframe(periods=predict_period, freq="B")
     forecast = prophet.predict(future)
 
-    res = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].copy()
-    res['trend'] = forecast['trend']
-    res['weekly'] = forecast['weekly'] if 'weekly' in forecast.columns else 0
-    res['yearly'] = forecast['yearly'] if 'yearly' in forecast.columns else 0
-    res['quarterly'] = forecast['quarterly'] if 'quarterly' in forecast.columns else 0
-    res['monthly'] = forecast['monthly'] if 'monthly' in forecast.columns else 0
-    res['uncertainty_range'] = res['yhat_upper'] - res['yhat_lower']
+    res = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].copy()
+    res["trend"] = forecast["trend"]
+    res["weekly"] = forecast["weekly"] if "weekly" in forecast.columns else 0
+    res["yearly"] = forecast["yearly"] if "yearly" in forecast.columns else 0
+    res["quarterly"] = forecast["quarterly"] if "quarterly" in forecast.columns else 0
+    res["monthly"] = forecast["monthly"] if "monthly" in forecast.columns else 0
+    res["uncertainty_range"] = res["yhat_upper"] - res["yhat_lower"]
     # Volatility forecast is GARCH-specific; emit a zero column to keep the schema uniform.
-    res['volatility_forecast'] = 0.0
+    res["volatility_forecast"] = 0.0
 
     return Forecast(series=res, model=prophet)
