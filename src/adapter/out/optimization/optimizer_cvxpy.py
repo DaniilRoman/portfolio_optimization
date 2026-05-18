@@ -113,6 +113,7 @@ def _run_cvxpy_optimization_with_map(
     max_per_etf_budget: float,
     etf_map: dict[str, int],
     include_risk: bool = True,
+    sigma: "np.ndarray | None" = None,
 ) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
     max_shares_per_stock = np.asarray(_calculate_max_shares(current_prices, max_per_etf_budget), dtype=int)
@@ -168,14 +169,20 @@ def _run_cvxpy_optimization_with_map(
 
     risk_penalty = 0
     if include_risk:
-        risk_penalty = (
-            0.35 * cp.sum_squares(value_vector / max(budget, 1e-9))
-            + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, value_vector) / max(budget, 1e-9))
-        )
-        if sector_exposure is not None and sector_exposure.size > 0:
-            risk_penalty += 0.20 * cp.sum_squares(sector_exposure / max(budget, 1e-9))
-        if company_exposure is not None and company_exposure.size > 0:
-            risk_penalty += 0.20 * cp.sum_squares(company_exposure / max(budget, 1e-9))
+        w = value_vector / max(budget, 1e-9)
+        if sigma is not None:
+            # True mean-variance: w^T Σ w (§4.1 Ledoit-Wolf covariance)
+            risk_penalty = cp.quad_form(w, sigma)
+        else:
+            # Diagonal fallback: HHI-like concentration + vol-weighted concentration
+            risk_penalty = (
+                0.35 * cp.sum_squares(w)
+                + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, w))
+            )
+            if sector_exposure is not None and sector_exposure.size > 0:
+                risk_penalty += 0.20 * cp.sum_squares(sector_exposure / max(budget, 1e-9))
+            if company_exposure is not None and company_exposure.size > 0:
+                risk_penalty += 0.20 * cp.sum_squares(company_exposure / max(budget, 1e-9))
 
     objective = profit - (settings.cvxpy.risk_gamma * risk_penalty if include_risk else 0)
 
@@ -199,14 +206,18 @@ def _run_cvxpy_optimization_with_map(
         if include_risk:
             relaxed_sector = A_sector @ relaxed_value_vector if A_sector.size else None
             relaxed_company = A_company @ relaxed_value_vector if A_company.size else None
-            relaxed_risk_penalty = (
-                0.35 * cp.sum_squares(relaxed_value_vector / max(budget, 1e-9))
-                + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, relaxed_value_vector) / max(budget, 1e-9))
-            )
-            if relaxed_sector is not None and relaxed_sector.size > 0:
-                relaxed_risk_penalty += 0.20 * cp.sum_squares(relaxed_sector / max(budget, 1e-9))
-            if relaxed_company is not None and relaxed_company.size > 0:
-                relaxed_risk_penalty += 0.20 * cp.sum_squares(relaxed_company / max(budget, 1e-9))
+            relaxed_w = relaxed_value_vector / max(budget, 1e-9)
+            if sigma is not None:
+                relaxed_risk_penalty = cp.quad_form(relaxed_w, sigma)
+            else:
+                relaxed_risk_penalty = (
+                    0.35 * cp.sum_squares(relaxed_w)
+                    + 0.25 * cp.sum_squares(cp.multiply(volatility_proxy, relaxed_w))
+                )
+                if relaxed_sector is not None and relaxed_sector.size > 0:
+                    relaxed_risk_penalty += 0.20 * cp.sum_squares(relaxed_sector / max(budget, 1e-9))
+                if relaxed_company is not None and relaxed_company.size > 0:
+                    relaxed_risk_penalty += 0.20 * cp.sum_squares(relaxed_company / max(budget, 1e-9))
 
         relaxed_objective = relaxed_profit - (settings.cvxpy.risk_gamma * relaxed_risk_penalty if include_risk else 0)
         relaxed_problem = cp.Problem(cp.Maximize(relaxed_objective), relaxed_constraints)
@@ -221,7 +232,12 @@ def _run_cvxpy_optimization_with_map(
     return best_individual, stocks, current_prices, predicted_prices, dividend_yields, expense_ratios, tickers
 
 
-def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: float = 50.0) -> OptimizationResult:
+def optimize(
+    stocks: list[StockData],
+    budget: float = 50.0,
+    max_per_etf_budget: float = 50.0,
+    sigma: "np.ndarray | None" = None,
+) -> OptimizationResult:
     if max_per_etf_budget is None:
         max_per_etf_budget = min(50.0, budget / 2)
     elif max_per_etf_budget > budget:
@@ -230,7 +246,7 @@ def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: 
     etf_map = __get_etf_map()
 
     risk_individual, r_stocks, r_prices, r_predicted, r_div, r_exp, r_tickers = _run_cvxpy_optimization_with_map(
-        stocks, budget, max_per_etf_budget, etf_map, include_risk=True
+        stocks, budget, max_per_etf_budget, etf_map, include_risk=True, sigma=sigma
     )
     profit_individual, p_stocks, p_prices, p_predicted, p_div, p_exp, p_tickers = _run_cvxpy_optimization_with_map(
         stocks, budget, max_per_etf_budget, etf_map, include_risk=False
