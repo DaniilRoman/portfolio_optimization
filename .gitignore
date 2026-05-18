@@ -4,4 +4,4 @@ __pycache__/
 .test_files/
 /src/adapter/out/parser/
 .env
-
+.specs
