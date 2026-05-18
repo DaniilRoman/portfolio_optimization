@@ -16,7 +16,7 @@ _OPTIMIZERS: dict[str, str] = {
 
 def optimize(
     stocks: list[StockData],
-    budget: int = 10000,
+    budget: int = 100,
     price_history: pd.DataFrame | None = None,
 ) -> OptimizationResult:
     name = settings.OPTIMIZER
