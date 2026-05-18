@@ -28,6 +28,13 @@ class CVXPYSettings(BaseModel):
     risk_gamma: float = 0.01
 
 
+class BacktestSettings(BaseModel):
+    train_window_days: int = 252
+    rebalance_days: int = 21
+    transaction_cost: float = 0.0005
+    slippage: float = 0.0002
+
+
 class Settings(BaseSettings):
     # Credentials — required in prod; optional (default "") in dev/backtest.
     TELEGRAM_TO: str = ""
@@ -40,8 +47,17 @@ class Settings(BaseSettings):
     PREDICTER: Literal["garch", "prophet"] = "garch"
     OPTIMIZER: Literal["ga", "cvxpy"] = "ga"
     UNIVERSE: Literal["sp500", "etf", "de_etf", "ishares", "vanguard"] = "etf"
+    BENCHMARK: dict[str, str] = {
+        "sp500": "SPY",
+        "etf": "ACWI",
+        "de_etf": "EXSA.DE",
+        "ishares": "ACWI",
+        "vanguard": "ACWI",
+    }
+    RISK_FREE_SERIES: str = "DGS3MO"
     ga: GASettings = GASettings()
     cvxpy: CVXPYSettings = CVXPYSettings()
+    backtest: BacktestSettings = BacktestSettings()
 
     # Profile file is loaded after .env; env vars in the shell win over both.
     model_config = SettingsConfigDict(
