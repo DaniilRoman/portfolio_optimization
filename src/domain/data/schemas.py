@@ -20,20 +20,14 @@ def validate_history_frame(df: pd.DataFrame) -> None:
     """Raise ValueError if *df* is missing any required history columns."""
     missing = HISTORY_COLUMNS - set(df.columns)
     if missing:
-        raise ValueError(
-            f"HistoryFrame is missing required columns: {sorted(missing)}. "
-            f"Got: {sorted(df.columns)}"
-        )
+        raise ValueError(f"HistoryFrame is missing required columns: {sorted(missing)}. Got: {sorted(df.columns)}")
 
 
 def validate_forecast_frame(df: pd.DataFrame) -> None:
     """Raise ValueError if *df* is missing any required forecast columns."""
     missing = FORECAST_COLUMNS - set(df.columns)
     if missing:
-        raise ValueError(
-            f"ForecastFrame is missing required columns: {sorted(missing)}. "
-            f"Got: {sorted(df.columns)}"
-        )
+        raise ValueError(f"ForecastFrame is missing required columns: {sorted(missing)}. Got: {sorted(df.columns)}")
 
 
 _MAX_GAP_CALENDAR_DAYS = 7

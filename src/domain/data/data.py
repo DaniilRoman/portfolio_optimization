@@ -1,4 +1,5 @@
 """Core domain types: Asset, MarketSnapshot, ForecastSummary, AnalysisReport, StockInfo, TickerMetadata, ProfitabilityData, OptimizationResult, Portfolio, Allocation, RiskMetrics."""
+
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -43,6 +44,7 @@ class TickerMetadata:
 @dataclass
 class Asset:
     """Identity and static metadata for a stock or ETF."""
+
     ticker_symbol: str
     stock_name: str
     currency: str
@@ -55,6 +57,7 @@ class Asset:
 @dataclass
 class MarketSnapshot:
     """Current market data for a stock or ETF."""
+
     current_price: float
     beta: float
     standard_deviation: float
@@ -65,6 +68,7 @@ class MarketSnapshot:
 @dataclass
 class ForecastSummary:
     """Prediction outputs for a stock or ETF."""
+
     predict_price: float
     prediction_uncertainty: float
     forecast_volatility: float
@@ -75,6 +79,7 @@ class ForecastSummary:
 @dataclass
 class AnalysisReport:
     """Full analysis result composing Asset, MarketSnapshot, and ForecastSummary."""
+
     asset: Asset
     market: MarketSnapshot
     forecast: ForecastSummary
