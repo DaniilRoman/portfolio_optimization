@@ -5,3 +5,4 @@ __pycache__/
 /src/adapter/out/parser/
 .env
 .specs
+data/

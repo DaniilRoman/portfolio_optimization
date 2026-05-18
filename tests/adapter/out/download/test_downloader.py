@@ -13,7 +13,14 @@ from src.domain.data.data import SkipException, StockInfo, TickerMetadata
 def _make_hist_df(n: int = 10) -> pd.DataFrame:
     dates = pd.date_range("2024-01-01", periods=n, freq="B")
     prices = np.linspace(100, 110, n)
-    df = pd.DataFrame({"Close": prices}, index=dates)
+    df = pd.DataFrame(
+        {
+            "Close": prices,
+            "Dividends": np.zeros(n),
+            "Stock Splits": np.zeros(n),
+        },
+        index=dates,
+    )
     df.index.name = "Date"
     return df
 
@@ -99,6 +106,12 @@ class TestExtractTickerMetadata:
 
 
 class TestDownloadStockData:
+    @pytest.fixture(autouse=True)
+    def _bypass_cache(self, monkeypatch):
+        """Route cache calls to no-ops so unit tests don't touch the filesystem."""
+        monkeypatch.setattr("src.adapter.out.download.downloader.cache.load", lambda *a, **kw: None)
+        monkeypatch.setattr("src.adapter.out.download.downloader.cache.save", lambda *a, **kw: None)
+
     def test_happy_path_returns_stock_info_with_correct_schema(self):
         mock_ticker = _make_mock_ticker()
         with patch("yfinance.Ticker", return_value=mock_ticker):
@@ -131,3 +144,41 @@ class TestDownloadStockData:
                 with patch("src.adapter.out.download.downloader.utils.next_day", return_value="2024-01-02"):
                     result = download_stock_data("VOO")
         assert isinstance(result, StockInfo)
+
+    def test_history_called_with_auto_adjust_and_actions(self):
+        mock_ticker = _make_mock_ticker()
+        with patch("yfinance.Ticker", return_value=mock_ticker):
+            download_stock_data("VOO", start_date="2024-01-01", end_date="2024-01-15")
+        _, kwargs = mock_ticker.history.call_args
+        assert kwargs.get("auto_adjust") is True
+        assert kwargs.get("actions") is True
+
+    def test_stock_info_carries_point_in_time(self):
+        mock_ticker = _make_mock_ticker()
+        pit = pd.Timestamp("2024-06-01")
+        with patch("yfinance.Ticker", return_value=mock_ticker):
+            result = download_stock_data("VOO", start_date="2024-01-01", end_date="2024-06-01", point_in_time=pit)
+        assert result.point_in_time == pit.normalize()
+
+
+class TestDownloadCache:
+    def test_cache_hit_skips_yfinance_history_call(self, tmp_path, monkeypatch):
+        """Second call with same vintage must not invoke yfinance history."""
+        monkeypatch.chdir(tmp_path)
+        mock_ticker = _make_mock_ticker()
+
+        with patch("yfinance.Ticker", return_value=mock_ticker):
+            download_stock_data("VOO", start_date="2024-01-01", end_date="2024-01-15")
+            download_stock_data("VOO", start_date="2024-01-01", end_date="2024-01-15")
+
+        assert mock_ticker.history.call_count == 1
+
+    def test_cache_file_is_written_on_first_call(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        mock_ticker = _make_mock_ticker()
+
+        with patch("yfinance.Ticker", return_value=mock_ticker):
+            download_stock_data("VOO", start_date="2024-01-01", end_date="2024-01-15")
+
+        cache_files = list(tmp_path.rglob("*.parquet"))
+        assert len(cache_files) == 1

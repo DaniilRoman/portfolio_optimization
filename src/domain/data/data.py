@@ -1,5 +1,5 @@
 """Core domain types: Asset, MarketSnapshot, ForecastSummary, AnalysisReport, StockInfo, TickerMetadata, ProfitabilityData, OptimizationResult, Portfolio, Allocation, RiskMetrics."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
@@ -92,6 +92,7 @@ StockData = AnalysisReport
 class StockInfo:
     historic_data: pd.DataFrame
     ticker: TickerMetadata
+    point_in_time: pd.Timestamp = field(default_factory=lambda: pd.Timestamp.today().normalize())
 
 
 class SkipException(Exception):

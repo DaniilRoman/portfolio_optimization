@@ -8,9 +8,10 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
+from src.adapter.out.download import cache
 from src.domain.data import data
 from src.domain.data.data import StockInfo, TickerMetadata
-from src.domain.data.schemas import validate_history_frame
+from src.domain.data.schemas import validate_history_frame, validate_history_quality
 from src.infrastructure.utils import utils
 
 
@@ -65,18 +66,27 @@ def download_stock_data(
     stock_name: str,
     start_date: str | None = None,
     end_date: str | None = None,
+    point_in_time: pd.Timestamp | None = None,
 ) -> StockInfo:
     if start_date is None:
         start_date = utils.current_date_str()
     if end_date is None:
         end_date = utils.next_day(1)
-    stock = yf.Ticker(stock_name)
+    pit = (point_in_time if point_in_time is not None else pd.Timestamp.today()).normalize()
+    vintage_date = pit.date()
 
-    hist = stock.history(start=start_date, end=end_date)
-    if hist.empty:
+    hist = cache.load(stock_name, vintage_date)
+    if hist is None:
+        stock = yf.Ticker(stock_name)
+        hist = stock.history(start=start_date, end=end_date, auto_adjust=True, actions=True)
+        if hist.empty:
+            raise data.SkipException(f"History data is empty for a stock: {stock_name}")
+        hist = hist[~hist.index.duplicated(keep="first")]
+        cache.save(stock_name, hist, vintage_date)
+    elif hist.empty:
         raise data.SkipException(f"History data is empty for a stock: {stock_name}")
 
-    hist = hist[~hist.index.duplicated(keep="first")]
+    stock = yf.Ticker(stock_name)
 
     historic_data = hist["Close"].to_frame("y")
     historic_data["ds"] = pd.to_datetime(historic_data.index.date)
@@ -85,6 +95,7 @@ def download_stock_data(
 
     ticker_meta = _extract_ticker_metadata(stock)
     validate_history_frame(historic_data)
-    logging.debug("Downloaded %s: %d rows, last price %.2f", stock_name, len(historic_data), historic_data["y"].iloc[-1])
+    validate_history_quality(historic_data)
+    logging.debug("Loaded %s: %d rows, last price %.2f", stock_name, len(historic_data), historic_data["y"].iloc[-1])
 
-    return StockInfo(historic_data=historic_data, ticker=ticker_meta)
+    return StockInfo(historic_data=historic_data, ticker=ticker_meta, point_in_time=pit)
