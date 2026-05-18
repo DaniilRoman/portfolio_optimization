@@ -1,8 +1,8 @@
-"""Builds a StockData aggregate from StockInfo + Forecast; generates two/five-year price-history chart images."""
+"""Builds an AnalysisReport aggregate from StockInfo + Forecast; generates two/five-year price-history chart images."""
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.logic.data.data import ProfitabilityData, StockData, StockInfo
+from src.logic.data.data import AnalysisReport, Asset, ForecastSummary, MarketSnapshot, ProfitabilityData, StockInfo
 from src.logic.data.forecast import Forecast
 
 
@@ -11,7 +11,7 @@ def analyses(
     stock_info: StockInfo,
     two_year_forecast: Forecast,
     five_year_forecast: Forecast,
-) -> StockData:
+) -> AnalysisReport:
     meta = stock_info.ticker
     current_price = __last_price(stock_info.historic_data, "y")
 
@@ -44,28 +44,34 @@ def analyses(
         trailing_eps=meta.trailing_eps,
     )
 
-    return StockData(
-        ticker_symbol=ticker_symbol,
-        stock_name=meta.long_name,
-        currency=meta.currency,
-        current_price=current_price,
-        predict_price=predict_price,
-        two_year_file_name=two_year_file_name,
-        five_year_file_name=five_year_file_name,
-        is_stock_growing=is_stock_growing,
-        industry=meta.industry,
-        profitability_data=profitability_data,
-        average_daily_volume=meta.average_volume,
-        description=meta.description,
+    return AnalysisReport(
+        asset=Asset(
+            ticker_symbol=ticker_symbol,
+            stock_name=meta.long_name,
+            currency=meta.currency,
+            industry=meta.industry,
+            description=meta.description,
+            expense_ratio=meta.expense_ratio,
+            assets_under_management=meta.total_assets,
+        ),
+        market=MarketSnapshot(
+            current_price=current_price,
+            beta=meta.beta,
+            standard_deviation=standard_deviation,
+            dividend_yield=meta.dividend_yield,
+            average_daily_volume=meta.average_volume,
+        ),
+        forecast=ForecastSummary(
+            predict_price=predict_price,
+            prediction_uncertainty=forecast_uncertainty,
+            forecast_volatility=forecast_volatility,
+            two_year_file_name=two_year_file_name,
+            five_year_file_name=five_year_file_name,
+        ),
         top_holdings=meta.top_holdings,
         sector_allocation=meta.sector_weights,
-        beta=meta.beta,
-        standard_deviation=standard_deviation,
-        dividend_yield=meta.dividend_yield,
-        assets_under_management=meta.total_assets,
-        expense_ratio=meta.expense_ratio,
-        forecast_volatility=forecast_volatility,
-        prediction_uncertainty=forecast_uncertainty,
+        is_stock_growing=is_stock_growing,
+        profitability_data=profitability_data,
     )
 
 

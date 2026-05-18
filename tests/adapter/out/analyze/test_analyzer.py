@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.adapter.out.analyze import analyzer
-from src.logic.data.data import ProfitabilityData, StockData, StockInfo
+from src.logic.data.data import AnalysisReport, ProfitabilityData, StockInfo
 from src.logic.data.forecast import Forecast
 from tests.factories import make_forecast, make_stock_info, make_ticker_metadata
 
@@ -71,7 +71,7 @@ def test_is_stock_growing():
     print("  ✅ Non-growing stock test passed")
 
 
-def _run_analyses(ticker_symbol: str, stock_info: StockInfo, two_year_forecast: Forecast, five_year_forecast: Forecast) -> StockData:
+def _run_analyses(ticker_symbol: str, stock_info: StockInfo, two_year_forecast: Forecast, five_year_forecast: Forecast) -> AnalysisReport:
     with patch("matplotlib.pyplot.savefig"), patch("matplotlib.pyplot.figure"):
         return analyzer.analyses(
             ticker_symbol=ticker_symbol,
@@ -91,24 +91,24 @@ def test_analyses_function():
 
     result = _run_analyses(ticker_symbol, stock_info, two_year_forecast, five_year_forecast)
 
-    assert isinstance(result, StockData), "Result should be a StockData object"
-    print("  ✅ Returned StockData object")
+    assert isinstance(result, AnalysisReport), "Result should be an AnalysisReport object"
+    print("  ✅ Returned AnalysisReport object")
 
-    assert result.ticker_symbol == ticker_symbol
-    assert result.stock_name == "Test ETF"
-    assert result.currency == "USD"
-    assert result.industry == "ETF"
-    assert result.beta == 1.0
-    assert isinstance(result.standard_deviation, float)
-    assert result.dividend_yield == 0.02
-    assert result.assets_under_management == 1_000_000_000.0
-    assert result.expense_ratio == 0.0003
+    assert result.asset.ticker_symbol == ticker_symbol
+    assert result.asset.stock_name == "Test ETF"
+    assert result.asset.currency == "USD"
+    assert result.asset.industry == "ETF"
+    assert result.market.beta == 1.0
+    assert isinstance(result.market.standard_deviation, float)
+    assert result.market.dividend_yield == 0.02
+    assert result.asset.assets_under_management == 1_000_000_000.0
+    assert result.asset.expense_ratio == 0.0003
 
     assert isinstance(result.profitability_data, ProfitabilityData)
     assert result.profitability_data.trailing_eps == 5.0
-    assert result.two_year_file_name == f"two_year_{ticker_symbol}.png"
-    assert result.five_year_file_name == f"five_year_{ticker_symbol}.png"
-    print("  ✅ All StockData fields correctly populated")
+    assert result.forecast.two_year_file_name == f"two_year_{ticker_symbol}.png"
+    assert result.forecast.five_year_file_name == f"five_year_{ticker_symbol}.png"
+    print("  ✅ All AnalysisReport fields correctly populated")
 
 
 def test_analyses_with_missing_fund_data():
@@ -121,12 +121,12 @@ def test_analyses_with_missing_fund_data():
 
     result = _run_analyses(ticker_symbol, stock_info, two_year_forecast, five_year_forecast)
 
-    print(f"  assets_under_management: {result.assets_under_management}")
-    print(f"  expense_ratio: {result.expense_ratio}")
-    print(f"  dividend_yield: {result.dividend_yield}")
-    assert result.assets_under_management == 0, f"Expected 0, got {result.assets_under_management}"
-    assert result.expense_ratio == 0, f"Expected 0, got {result.expense_ratio}"
-    assert result.dividend_yield == 0, f"Expected 0, got {result.dividend_yield}"
+    print(f"  assets_under_management: {result.asset.assets_under_management}")
+    print(f"  expense_ratio: {result.asset.expense_ratio}")
+    print(f"  dividend_yield: {result.market.dividend_yield}")
+    assert result.asset.assets_under_management == 0, f"Expected 0, got {result.asset.assets_under_management}"
+    assert result.asset.expense_ratio == 0, f"Expected 0, got {result.asset.expense_ratio}"
+    assert result.market.dividend_yield == 0, f"Expected 0, got {result.market.dividend_yield}"
     print("  ✅ Missing fund data handled correctly")
 
 
@@ -140,7 +140,7 @@ def test_analyses_with_empty_description():
 
     result = _run_analyses(ticker_symbol, stock_info, two_year_forecast, five_year_forecast)
 
-    assert result.description == ""
+    assert result.asset.description == ""
     print("  ✅ Empty description handled correctly")
 
 
@@ -166,8 +166,8 @@ def test_pessimistic_predict_price_calculation():
 
     expected_predict_price = 195.0
     print(f"  Expected predict_price: {expected_predict_price}")
-    print(f"  Actual predict_price: {result.predict_price}")
-    assert round(result.predict_price, 2) == round(expected_predict_price, 2)
+    print(f"  Actual predict_price: {result.forecast.predict_price}")
+    assert round(result.forecast.predict_price, 2) == round(expected_predict_price, 2)
     print("  ✅ Pessimistic predict_price calculation test passed")
 
 
@@ -193,6 +193,6 @@ def test_pessimistic_predict_price_with_different_values():
 
     expected_predict_price = 190.0
     print(f"  Expected predict_price: {expected_predict_price}")
-    print(f"  Actual predict_price: {result.predict_price}")
-    assert round(result.predict_price, 2) == round(expected_predict_price, 2)
+    print(f"  Actual predict_price: {result.forecast.predict_price}")
+    assert round(result.forecast.predict_price, 2) == round(expected_predict_price, 2)
     print("  ✅ Pessimistic predict_price with different values test passed")

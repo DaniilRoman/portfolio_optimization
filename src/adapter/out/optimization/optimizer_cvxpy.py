@@ -5,7 +5,7 @@ import cvxpy as cp
 import numpy as np
 
 from config.configuration import settings
-from src.logic.data.data import OptimizationResult, StockData
+from src.logic.data.data import AnalysisReport, OptimizationResult
 
 from .optimizer import (
     __get_etf_map,
@@ -14,6 +14,8 @@ from .optimizer import (
     _create_ownership_weights,
     _prepare_stock_data,
 )
+
+StockData = AnalysisReport  # local alias for annotations in this module
 
 
 def _build_expected_net_profit_per_share(
@@ -134,15 +136,15 @@ def _run_cvxpy_optimization_with_map(
     A_company, _companies = _build_company_matrix(stocks)
 
     def _stock_volatility(stock: StockData, current_price: float) -> float:
-        forecast_vol = float(getattr(stock, "forecast_volatility", 0.0))
+        forecast_vol = stock.forecast.forecast_volatility
         if forecast_vol <= 0:
-            pred_unc = float(getattr(stock, "prediction_uncertainty", 0.0))
+            pred_unc = stock.forecast.prediction_uncertainty
             if current_price > 0 and pred_unc > 0:
                 forecast_vol = pred_unc / current_price
         return max(
-            float(getattr(stock, "standard_deviation", 0.0)),
+            stock.market.standard_deviation,
             forecast_vol,
-            float(getattr(stock, "beta", 0.0)) * 0.15,
+            stock.market.beta * 0.15,
         )
 
     volatility_proxy = np.asarray([

@@ -1,4 +1,4 @@
-"""Core domain types: StockData, StockInfo, TickerMetadata, ProfitabilityData, OptimizationResult, Portfolio, Allocation, RiskMetrics."""
+"""Core domain types: Asset, MarketSnapshot, ForecastSummary, AnalysisReport, StockInfo, TickerMetadata, ProfitabilityData, OptimizationResult, Portfolio, Allocation, RiskMetrics."""
 from dataclasses import dataclass
 
 import numpy as np
@@ -41,28 +41,51 @@ class TickerMetadata:
 
 
 @dataclass
-class StockData:
+class Asset:
+    """Identity and static metadata for a stock or ETF."""
     ticker_symbol: str
     stock_name: str
     currency: str
-    current_price: float
-    predict_price: float
-    two_year_file_name: str
-    five_year_file_name: str
-    is_stock_growing: bool
     industry: str
-    profitability_data: ProfitabilityData
+    description: str
+    expense_ratio: float
+    assets_under_management: float
+
+
+@dataclass
+class MarketSnapshot:
+    """Current market data for a stock or ETF."""
+    current_price: float
     beta: float
     standard_deviation: float
     dividend_yield: float
+    average_daily_volume: float
+
+
+@dataclass
+class ForecastSummary:
+    """Prediction outputs for a stock or ETF."""
+    predict_price: float
+    prediction_uncertainty: float
+    forecast_volatility: float
+    two_year_file_name: str
+    five_year_file_name: str
+
+
+@dataclass
+class AnalysisReport:
+    """Full analysis result composing Asset, MarketSnapshot, and ForecastSummary."""
+    asset: Asset
+    market: MarketSnapshot
+    forecast: ForecastSummary
     top_holdings: np.ndarray
     sector_allocation: dict[str, float]
-    average_daily_volume: float
-    assets_under_management: float
-    expense_ratio: float
-    description: str
-    forecast_volatility: float = 0.0
-    prediction_uncertainty: float = 0.0
+    is_stock_growing: bool
+    profitability_data: ProfitabilityData
+
+
+# Backward-compatible alias so existing imports of StockData keep working.
+StockData = AnalysisReport
 
 
 @dataclass
@@ -77,7 +100,7 @@ class SkipException(Exception):
 
 @dataclass
 class Allocation:
-    asset: StockData
+    asset: Asset
     quantity: int
     total_cost: float
     net_profit: float
@@ -85,6 +108,7 @@ class Allocation:
     dividend_income: float
     expense_fee: float
     expense_ratio: float
+    forecast_volatility: float = 0.0
 
 
 @dataclass

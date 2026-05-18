@@ -11,10 +11,10 @@ from src.adapter.out.predict import predicter
 from src.adapter.out.stats import stats_calculator
 from src.adapter.out.stock_pick import stock_picker
 from src.infrastructure.utils import utils
-from src.logic.data.data import StockData, StockInfo
+from src.logic.data.data import AnalysisReport, StockInfo
 
 
-def run(stock_name: str | None = None) -> StockData | None:
+def run(stock_name: str | None = None) -> AnalysisReport | None:
     if stock_name is None:
         stock_name = stock_picker.pick()
     logging.info("Started an analyses of `%s`", stock_name)
@@ -46,9 +46,9 @@ def __slice(historic_data: pd.DataFrame, prev_date: int) -> pd.DataFrame:
     return historic_data.loc[two_years_ago:today]
 
 
-def __clean_artifacts(analyses_result: StockData) -> None:
-    os.remove(analyses_result.two_year_file_name)
-    os.remove(analyses_result.five_year_file_name)
+def __clean_artifacts(analyses_result: AnalysisReport) -> None:
+    os.remove(analyses_result.forecast.two_year_file_name)
+    os.remove(analyses_result.forecast.five_year_file_name)
 
 
 def __toSkip(stock_info: StockInfo) -> bool:

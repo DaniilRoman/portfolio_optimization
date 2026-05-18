@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, call, patch
 
-from src.logic.data.data import StockData, StockInfo
+from src.logic.data.data import AnalysisReport, StockInfo
 from src.logic.data.forecast import Forecast
 from tests.factories import make_forecast, make_historic_df, make_stock_data, make_stock_info
 
@@ -14,8 +14,8 @@ class TestRunCallSequence:
         *,
         stock_info: StockInfo | None = None,
         forecast: Forecast | None = None,
-        analyses_result: StockData | None = None,
-    ) -> tuple[StockData | None, dict[str, MagicMock]]:
+        analyses_result: AnalysisReport | None = None,
+    ) -> tuple[AnalysisReport | None, dict[str, MagicMock]]:
         if stock_info is None:
             stock_info = make_stock_info(historic_data=make_historic_df(800))
         if forecast is None:
@@ -44,9 +44,9 @@ class TestRunCallSequence:
 
         return result, mocks
 
-    def test_returns_stock_data(self) -> None:
+    def test_returns_analysis_report(self) -> None:
         result, _ = self._run_with_patches()
-        assert isinstance(result, StockData)
+        assert isinstance(result, AnalysisReport)
 
     def test_downloader_called_with_stock_name(self) -> None:
         _, mocks = self._run_with_patches("VOO")
@@ -74,7 +74,7 @@ class TestRunCallSequence:
         result, mocks = self._run_with_patches()
         assert result is not None
         mocks["remove"].assert_has_calls(
-            [call(result.two_year_file_name), call(result.five_year_file_name)],
+            [call(result.forecast.two_year_file_name), call(result.forecast.five_year_file_name)],
             any_order=True,
         )
 

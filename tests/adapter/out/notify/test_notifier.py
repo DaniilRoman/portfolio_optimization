@@ -5,11 +5,11 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 
 from src.adapter.out.notify import notifier
-from src.logic.data.data import Allocation, OptimizationResult, Portfolio, RiskMetrics, StockData
-from tests.factories import make_stock_data
+from src.logic.data.data import AnalysisReport, OptimizationResult, Portfolio, RiskMetrics
+from tests.factories import make_allocation, make_stock_data
 
 
-def _make_stock_data(**overrides: object) -> StockData:
+def _make_stock_data(**overrides: object) -> AnalysisReport:
     kwargs: dict = {
         "ticker_symbol": "VOO",
         "stock_name": "Vanguard S&P 500 ETF",
@@ -35,8 +35,8 @@ def _make_stock_data(**overrides: object) -> StockData:
 
 def _make_optimization_result() -> OptimizationResult:
     stock = _make_stock_data()
-    alloc = Allocation(
-        asset=stock,
+    alloc = make_allocation(
+        asset=stock.asset,
         quantity=2,
         total_cost=800.0,
         net_profit=95.0,
@@ -44,6 +44,7 @@ def _make_optimization_result() -> OptimizationResult:
         dividend_income=10.4,
         expense_fee=0.24,
         expense_ratio=0.0003,
+        forecast_volatility=stock.forecast.forecast_volatility,
     )
     portfolio = Portfolio(
         allocations=[alloc],
@@ -111,7 +112,7 @@ class TestNotify:
 
 
 class TestMarkdownEscaping:
-    def _get_caption(self, result: StockData) -> str:
+    def _get_caption(self, result: AnalysisReport) -> str:
         mock_bot = MagicMock()
         with (
             patch("telepot.Bot", return_value=mock_bot),

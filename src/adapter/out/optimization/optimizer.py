@@ -7,7 +7,9 @@ from deap import algorithms, base, creator, tools
 from deap.base import Toolbox
 
 from config.configuration import settings
-from src.logic.data.data import Allocation, OptimizationResult, Portfolio, RiskMetrics, StockData
+from src.logic.data.data import Allocation, AnalysisReport, OptimizationResult, Portfolio, RiskMetrics
+
+StockData = AnalysisReport  # local alias kept for type annotations in this module
 
 FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0)
 FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0)
@@ -82,22 +84,22 @@ def __calculate_volatility_risk(individual, stocks, current_prices):
         weight = etf_value / total_value
         
         # Historical volatility (standard deviation)
-        std_dev = stocks[i].standard_deviation
-        
+        std_dev = stocks[i].market.standard_deviation
+
         # If standard deviation is 0 or not available, use beta as fallback
         if std_dev <= 0:
             # Use beta as proxy for volatility (beta * market_volatility)
             # Assume market volatility of 0.15 (15% annualized)
             market_volatility = 0.15
-            std_dev = stocks[i].beta * market_volatility
-        
+            std_dev = stocks[i].market.beta * market_volatility
+
         # Standard deviation is already annualized (from yfinance)
         weighted_volatility += weight * std_dev
 
-        forecast_volatility = float(getattr(stocks[i], "forecast_volatility", 0.0))
+        forecast_volatility = stocks[i].forecast.forecast_volatility
         if forecast_volatility <= 0:
             # Prophet path: convert absolute forecast-band width to relative uncertainty.
-            pred_unc = float(getattr(stocks[i], "prediction_uncertainty", 0.0))
+            pred_unc = stocks[i].forecast.prediction_uncertainty
             if current_prices[i] > 0 and pred_unc > 0:
                 forecast_volatility = pred_unc / current_prices[i]
 
@@ -230,11 +232,11 @@ def __optimize_internal(toolbox, gen_individual_func):
 
 def _prepare_stock_data(stocks: list[StockData]):
     """Extract and prepare stock data for optimization."""
-    tickers = [stock.ticker_symbol for stock in stocks]
-    current_prices = [stock.current_price for stock in stocks]
-    predicted_prices = [stock.predict_price for stock in stocks]
-    dividend_yields = [stock.dividend_yield for stock in stocks]
-    expense_ratios = [stock.expense_ratio for stock in stocks]
+    tickers = [stock.asset.ticker_symbol for stock in stocks]
+    current_prices = [stock.market.current_price for stock in stocks]
+    predicted_prices = [stock.forecast.predict_price for stock in stocks]
+    dividend_yields = [stock.market.dividend_yield for stock in stocks]
+    expense_ratios = [stock.asset.expense_ratio for stock in stocks]
     
     return tickers, current_prices, predicted_prices, dividend_yields, expense_ratios
 
@@ -425,7 +427,7 @@ def _build_portfolio(
             expense_fee = cost * expense_ratios[i]
             net_profit = capital_gain + dividend_income - expense_fee
             allocations.append(Allocation(
-                asset=stocks[i],
+                asset=stocks[i].asset,
                 quantity=shares,
                 total_cost=cost,
                 net_profit=net_profit,
@@ -433,6 +435,7 @@ def _build_portfolio(
                 dividend_income=dividend_income,
                 expense_fee=expense_fee,
                 expense_ratio=expense_ratios[i],
+                forecast_volatility=stocks[i].forecast.forecast_volatility,
             ))
 
     allocations.sort(key=lambda a: a.net_profit, reverse=True)

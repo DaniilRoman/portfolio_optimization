@@ -6,7 +6,7 @@ import numpy as np
 import telepot
 
 from config.configuration import settings
-from src.logic.data.data import OptimizationResult, Portfolio, ProfitabilityData, StockData
+from src.logic.data.data import AnalysisReport, OptimizationResult, Portfolio, ProfitabilityData
 
 
 def send_text_message(text: str) -> None:
@@ -18,16 +18,16 @@ def send_text_message(text: str) -> None:
     bot.sendMessage(chat_id=settings.TELEGRAM_TO, text=text)
 
 
-def notify(result: StockData) -> None:
+def notify(result: AnalysisReport) -> None:
     if not __is_notifyable(result):
-        print(f"Stock {result.stock_name} is not growing - will be skipped")
+        print(f"Stock {result.asset.stock_name} is not growing - will be skipped")
         return
     if not settings.TELEGRAM_ENABLED:
-        logging.info("[dry-run] notify: %s → %s %s", result.ticker_symbol, result.predict_price, result.currency)
+        logging.info("[dry-run] notify: %s → %s %s", result.asset.ticker_symbol, result.forecast.predict_price, result.asset.currency)
         return
     msg_to_send = __to_msg(result)
-    first_photo_to_send = open(result.two_year_file_name, "rb")
-    second_photo_to_send = open(result.five_year_file_name, "rb")
+    first_photo_to_send = open(result.forecast.two_year_file_name, "rb")
+    second_photo_to_send = open(result.forecast.five_year_file_name, "rb")
 
     bot = telepot.Bot(settings.TELEGRAM_TOKEN)
     bot.getMe()
@@ -40,7 +40,7 @@ def notify(result: StockData) -> None:
     )
 
 
-def __is_notifyable(result: StockData) -> bool:
+def __is_notifyable(result: AnalysisReport) -> bool:
     return True  # TODO: add real filter once criteria are stable
 
 
@@ -107,22 +107,23 @@ def __profitability_data(profitability_data: ProfitabilityData) -> str:
     return res[:-2]
 
 
-def __to_msg(result: StockData) -> str:
-    stock_name_md_link = f"[{result.ticker_symbol}](https://finance.yahoo.com/quote/{result.ticker_symbol})"
+def __to_msg(result: AnalysisReport) -> str:
+    a, m, f = result.asset, result.market, result.forecast
+    stock_name_md_link = f"[{a.ticker_symbol}](https://finance.yahoo.com/quote/{a.ticker_symbol})"
     profitability = __profitability_data(result.profitability_data)
-    industry = f"__{result.industry}__" if result.industry else ""
+    industry = f"__{a.industry}__" if a.industry else ""
 
-    beta = f"Beta: {result.beta}\n" if result.beta else ""
-    standard_deviation = f"Standard Deviation: {result.standard_deviation}\n" if result.standard_deviation else ""
-    dividend_yield = f"Dividend Yield: {result.dividend_yield}\n" if result.dividend_yield else ""
-    average_daily_volume = f"Average Volume: {result.average_daily_volume}\n" if result.average_daily_volume else ""
-    assets_under_management = f"Assets Under Management: {result.assets_under_management}\n" if result.assets_under_management else ""
-    expense_ratio = f"Expense Ratio: {result.expense_ratio}\n" if result.expense_ratio else ""
-    description = f"Description: {result.description}\n" if result.description else ""
+    beta = f"Beta: {m.beta}\n" if m.beta else ""
+    standard_deviation = f"Standard Deviation: {m.standard_deviation}\n" if m.standard_deviation else ""
+    dividend_yield = f"Dividend Yield: {m.dividend_yield}\n" if m.dividend_yield else ""
+    average_daily_volume = f"Average Volume: {m.average_daily_volume}\n" if m.average_daily_volume else ""
+    assets_under_management = f"Assets Under Management: {a.assets_under_management}\n" if a.assets_under_management else ""
+    expense_ratio = f"Expense Ratio: {a.expense_ratio}\n" if a.expense_ratio else ""
+    description = f"Description: {a.description}\n" if a.description else ""
 
     return (
-        f"{stock_name_md_link} from {result.current_price} to {result.predict_price} ({result.currency})\n"
-        f"{result.stock_name}\n\n"
+        f"{stock_name_md_link} from {m.current_price} to {f.predict_price} ({a.currency})\n"
+        f"{a.stock_name}\n\n"
         f"{average_daily_volume}"
         f"{description}"
         f"{__escape_markdown(__format_top_holdings(result.top_holdings))}"
@@ -149,7 +150,7 @@ def __format_portfolio(portfolio: Portfolio) -> str:
     lines: list[str] = []
     for alloc in portfolio.allocations:
         net_pct = (alloc.net_profit / alloc.total_cost * 100) if alloc.total_cost > 0 else 0
-        forecast_vol = float(getattr(alloc.asset, "forecast_volatility", 0.0))
+        forecast_vol = alloc.forecast_volatility
         lines.append(f"• *{alloc.asset.ticker_symbol}*: {alloc.quantity} shares")
         lines.append(f"  {alloc.asset.stock_name}")
         lines.append(f"  Cost: €{alloc.total_cost:.2f}")

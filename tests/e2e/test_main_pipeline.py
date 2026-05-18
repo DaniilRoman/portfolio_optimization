@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pandas as pd
 
-from src.logic.data.data import OptimizationResult, StockData
+from src.logic.data.data import AnalysisReport, OptimizationResult
 
 FIXTURES = pathlib.Path(__file__).parent.parent / "fixtures"
 
@@ -52,7 +52,7 @@ def _make_mock_ticker(hist: pd.DataFrame) -> MagicMock:
     return mock
 
 
-def _run_pipeline(stock_name: str = "TST") -> StockData | None:
+def _run_pipeline(stock_name: str = "TST") -> AnalysisReport | None:
     """Run the full pipeline with all network I/O mocked."""
     hist = _load_fixture_hist()
     mock_ticker = _make_mock_ticker(hist)
@@ -78,9 +78,9 @@ class TestMainPipelineHappyPath:
     def test_pipeline_result_has_valid_prices(self) -> None:
         result = _run_pipeline()
         assert result is not None
-        assert result.current_price > 0
-        assert result.predict_price > 0
-        assert result.currency == "USD"
+        assert result.market.current_price > 0
+        assert result.forecast.predict_price > 0
+        assert result.asset.currency == "USD"
 
     def test_pipeline_calls_notifier(self) -> None:
         hist = _load_fixture_hist()

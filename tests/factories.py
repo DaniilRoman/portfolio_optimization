@@ -15,11 +15,14 @@ import pandas as pd
 
 from src.logic.data.data import (
     Allocation,
+    AnalysisReport,
+    Asset,
+    ForecastSummary,
+    MarketSnapshot,
     OptimizationResult,
     Portfolio,
     ProfitabilityData,
     RiskMetrics,
-    StockData,
     StockInfo,
     TickerMetadata,
 )
@@ -61,32 +64,74 @@ def make_ticker_metadata(**overrides: Any) -> TickerMetadata:
     return TickerMetadata(**defaults)  # type: ignore[arg-type]
 
 
-def make_stock_data(**overrides: Any) -> StockData:
+def make_asset(**overrides: Any) -> Asset:
     defaults: dict[str, Any] = dict(
         ticker_symbol="TST",
         stock_name="Test ETF",
         currency="USD",
-        current_price=100.0,
-        predict_price=110.0,
-        two_year_file_name="/tmp/tst_2y.png",
-        five_year_file_name="/tmp/tst_5y.png",
-        is_stock_growing=True,
         industry="ETF",
-        profitability_data=make_profitability_data(),
+        description="",
+        expense_ratio=0.0003,
+        assets_under_management=1_000_000_000.0,
+    )
+    defaults.update(overrides)
+    return Asset(**defaults)
+
+
+def make_market_snapshot(**overrides: Any) -> MarketSnapshot:
+    defaults: dict[str, Any] = dict(
+        current_price=100.0,
         beta=1.0,
         standard_deviation=0.12,
         dividend_yield=0.02,
-        top_holdings=np.array([["Apple Inc", 0.08], ["Microsoft Corp", 0.07]]),
-        sector_allocation={"Technology": 0.45, "Healthcare": 0.30, "Financials": 0.25},
         average_daily_volume=1_000_000.0,
-        assets_under_management=1_000_000_000.0,
-        expense_ratio=0.0003,
-        description="",
-        forecast_volatility=0.0,
-        prediction_uncertainty=0.0,
     )
     defaults.update(overrides)
-    return StockData(**defaults)  # type: ignore[arg-type]
+    return MarketSnapshot(**defaults)
+
+
+def make_forecast_summary(**overrides: Any) -> ForecastSummary:
+    defaults: dict[str, Any] = dict(
+        predict_price=110.0,
+        prediction_uncertainty=0.0,
+        forecast_volatility=0.0,
+        two_year_file_name="/tmp/tst_2y.png",
+        five_year_file_name="/tmp/tst_5y.png",
+    )
+    defaults.update(overrides)
+    return ForecastSummary(**defaults)
+
+
+def make_stock_data(**overrides: Any) -> AnalysisReport:
+    """Build an AnalysisReport accepting flat field overrides for backward compat."""
+    # Pull flat-kwarg overrides that belong to sub-objects
+    asset_fields = {k: overrides.pop(k) for k in list(overrides) if k in {
+        "ticker_symbol", "stock_name", "currency", "industry", "description",
+        "expense_ratio", "assets_under_management",
+    }}
+    market_fields = {k: overrides.pop(k) for k in list(overrides) if k in {
+        "current_price", "beta", "standard_deviation", "dividend_yield", "average_daily_volume",
+    }}
+    forecast_fields = {k: overrides.pop(k) for k in list(overrides) if k in {
+        "predict_price", "prediction_uncertainty", "forecast_volatility",
+        "two_year_file_name", "five_year_file_name",
+    }}
+
+    asset = overrides.pop("asset", make_asset(**asset_fields))
+    market = overrides.pop("market", make_market_snapshot(**market_fields))
+    forecast = overrides.pop("forecast", make_forecast_summary(**forecast_fields))
+
+    defaults: dict[str, Any] = dict(
+        asset=asset,
+        market=market,
+        forecast=forecast,
+        top_holdings=np.array([["Apple Inc", 0.08], ["Microsoft Corp", 0.07]]),
+        sector_allocation={"Technology": 0.45, "Healthcare": 0.30, "Financials": 0.25},
+        is_stock_growing=True,
+        profitability_data=make_profitability_data(),
+    )
+    defaults.update(overrides)
+    return AnalysisReport(**defaults)
 
 
 def make_historic_df(n: int = 800) -> pd.DataFrame:
@@ -135,9 +180,9 @@ def make_forecast(base: float = 150.0, n: int = 10, **overrides: Any) -> Forecas
 
 
 def make_allocation(**overrides: Any) -> Allocation:
-    stock = overrides.pop("asset", None) or make_stock_data()
+    asset = overrides.pop("asset", None) or make_asset()
     defaults: dict[str, Any] = dict(
-        asset=stock,
+        asset=asset,
         quantity=2,
         total_cost=200.0,
         net_profit=20.0,
@@ -145,6 +190,7 @@ def make_allocation(**overrides: Any) -> Allocation:
         dividend_income=4.0,
         expense_fee=1.0,
         expense_ratio=0.0003,
+        forecast_volatility=0.0,
     )
     defaults.update(overrides)
     return Allocation(**defaults)
