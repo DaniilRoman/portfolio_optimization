@@ -802,4 +802,4 @@ def resolve_universe(name: str) -> list[str]:
     try:
         return _UNIVERSES[name]
     except KeyError:
-        raise ValueError(f"Unknown UNIVERSE: {name!r}. Expected one of: {sorted(_UNIVERSES)}")
+        raise ValueError(f"Unknown UNIVERSE: {name!r}. Expected one of: {sorted(_UNIVERSES)}") from None

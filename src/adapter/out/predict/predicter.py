@@ -7,6 +7,8 @@ Both backends return a :class:`~src.logic.data.forecast.Forecast` carrying
 ``volatility_forecast`` and a ``model`` that exposes ``.plot(df)``.
 """
 
+import importlib
+
 import pandas as pd
 
 from config.configuration import settings
@@ -22,8 +24,5 @@ def predict(data: pd.DataFrame, predict_period: int = 30, **kwargs: object) -> F
     backend = settings.PREDICTER.lower()
     if backend not in _BACKENDS:
         raise ValueError(f"Unknown PREDICTER backend: {backend!r}. Expected one of: {sorted(_BACKENDS)}")
-    if backend == "prophet":
-        from .predicter_prophet import predict as _predict  # type: ignore[assignment]
-    else:
-        from .predicter_garch import predict as _predict  # type: ignore[assignment]
-    return _predict(data, predict_period=predict_period, **kwargs)  # type: ignore[arg-type]
+    module = importlib.import_module(_BACKENDS[backend], package=__package__)
+    return module.predict(data, predict_period=predict_period, **kwargs)  # type: ignore[no-any-return]
