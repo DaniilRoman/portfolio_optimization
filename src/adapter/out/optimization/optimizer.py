@@ -8,7 +8,7 @@ from deap import algorithms, base, creator, tools
 from deap.base import Toolbox
 
 from config.configuration import settings
-from src.logic.data.data import Allocation, AnalysisReport, OptimizationResult, Portfolio, RiskMetrics
+from src.domain.data.data import Allocation, AnalysisReport, OptimizationResult, Portfolio, RiskMetrics
 
 StockData = AnalysisReport  # local alias kept for type annotations in this module
 

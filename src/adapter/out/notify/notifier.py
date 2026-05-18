@@ -6,7 +6,7 @@ import numpy as np
 import telepot
 
 from config.configuration import settings
-from src.logic.data.data import AnalysisReport, OptimizationResult, Portfolio, ProfitabilityData
+from src.domain.data.data import AnalysisReport, OptimizationResult, Portfolio, ProfitabilityData
 
 
 def send_text_message(text: str) -> None:

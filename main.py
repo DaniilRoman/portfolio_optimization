@@ -4,8 +4,8 @@ from config.configuration import settings
 from config.stock_names import resolve_universe
 from src.adapter.out.notify import notifier
 from src.adapter.out.optimization import optimizer_dispatcher as optimizer
-from src.logic import stock_finder
-from src.logic.data import data
+from src.application import stock_finder
+from src.domain.data import data
 
 if __name__ == '__main__':
     notifier.send_text_message("=================")

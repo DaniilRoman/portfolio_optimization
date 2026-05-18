@@ -2,8 +2,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from src.logic.data.data import AnalysisReport, Asset, ForecastSummary, MarketSnapshot, ProfitabilityData, StockInfo
-from src.logic.data.forecast import Forecast
+from src.domain.data.data import AnalysisReport, Asset, ForecastSummary, MarketSnapshot, ProfitabilityData, StockInfo
+from src.domain.data.forecast import Forecast
 
 
 def analyses(

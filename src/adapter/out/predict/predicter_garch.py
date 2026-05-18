@@ -11,7 +11,7 @@ import pandas as pd
 from arch import arch_model
 from pandas import DataFrame
 
-from src.logic.data.forecast import Forecast
+from src.domain.data.forecast import Forecast
 
 logger = logging.getLogger(__name__)
 

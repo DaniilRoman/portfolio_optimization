@@ -3,7 +3,7 @@ import pandas as pd
 from pandas import DataFrame
 from prophet import Prophet
 
-from src.logic.data.forecast import Forecast
+from src.domain.data.forecast import Forecast
 
 
 def predict(

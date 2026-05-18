@@ -3,7 +3,7 @@ from typing import Protocol
 
 import pandas as pd
 
-from src.logic.data.forecast import Forecast
+from src.domain.data.forecast import Forecast
 
 
 class Predictor(Protocol):

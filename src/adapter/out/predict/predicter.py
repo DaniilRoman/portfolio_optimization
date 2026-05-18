@@ -2,7 +2,7 @@
 
 Routes ``predict`` calls to the GARCH or Prophet backend based on
 ``PREDICTER`` setting (env var ``PREDICTER``: "garch" | "prophet").
-Both backends return a :class:`~src.logic.data.forecast.Forecast` carrying
+Both backends return a :class:`~src.domain.data.forecast.Forecast` carrying
 ``ds``, ``yhat``, ``yhat_lower``, ``yhat_upper``, ``uncertainty_range``,
 ``volatility_forecast`` and a ``model`` that exposes ``.plot(df)``.
 """
@@ -12,7 +12,7 @@ import importlib
 import pandas as pd
 
 from config.configuration import settings
-from src.logic.data.forecast import Forecast
+from src.domain.data.forecast import Forecast
 
 _BACKENDS: dict[str, str] = {
     "garch": ".predicter_garch",

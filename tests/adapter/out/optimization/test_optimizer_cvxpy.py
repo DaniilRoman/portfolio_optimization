@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 
 from src.adapter.out.optimization import optimizer_cvxpy
-from src.logic.data.data import OptimizationResult, Portfolio
+from src.domain.data.data import OptimizationResult, Portfolio
 from tests.factories import make_stock_data
 
 

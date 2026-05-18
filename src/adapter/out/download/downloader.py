@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
+from src.domain.data import data
+from src.domain.data.data import StockInfo, TickerMetadata
+from src.domain.data.schemas import validate_history_frame
 from src.infrastructure.utils import utils
-from src.logic.data import data
-from src.logic.data.data import StockInfo, TickerMetadata
-from src.logic.data.schemas import validate_history_frame
 
 
 def __search_stocks(stock_name_query: str) -> list[str]:

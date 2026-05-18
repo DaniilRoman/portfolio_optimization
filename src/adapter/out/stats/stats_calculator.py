@@ -2,7 +2,7 @@
 import requests
 
 from config.configuration import settings
-from src.logic.data.data import AnalysisReport
+from src.domain.data.data import AnalysisReport
 
 
 def calculate(analyses_result: AnalysisReport) -> None:

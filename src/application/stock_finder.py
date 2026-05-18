@@ -10,8 +10,8 @@ from src.adapter.out.notify import notifier
 from src.adapter.out.predict import predicter
 from src.adapter.out.stats import stats_calculator
 from src.adapter.out.stock_pick import stock_picker
+from src.domain.data.data import AnalysisReport, StockInfo
 from src.infrastructure.utils import utils
-from src.logic.data.data import AnalysisReport, StockInfo
 
 
 def run(stock_name: str | None = None) -> AnalysisReport | None:

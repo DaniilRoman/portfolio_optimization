@@ -9,7 +9,7 @@ import pytest
 
 from config.configuration import settings
 from src.adapter.out.predict import predicter
-from src.logic.data.forecast import Forecast
+from src.domain.data.forecast import Forecast
 from tests.factories import make_forecast
 
 

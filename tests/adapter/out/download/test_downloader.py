@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from src.adapter.out.download.downloader import _extract_ticker_metadata, download_stock_data
-from src.logic.data.data import SkipException, StockInfo, TickerMetadata
+from src.domain.data.data import SkipException, StockInfo, TickerMetadata
 
 
 def _make_hist_df(n: int = 10) -> pd.DataFrame:

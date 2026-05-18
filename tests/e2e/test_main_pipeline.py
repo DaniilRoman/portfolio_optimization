@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pandas as pd
 
-from src.logic.data.data import AnalysisReport, OptimizationResult
+from src.domain.data.data import AnalysisReport, OptimizationResult
 
 FIXTURES = pathlib.Path(__file__).parent.parent / "fixtures"
 
@@ -59,13 +59,13 @@ def _run_pipeline(stock_name: str = "TST") -> AnalysisReport | None:
 
     with (
         patch("yfinance.Ticker", return_value=mock_ticker),
-        patch("src.logic.stock_finder.notifier.notify") as _m_notify,
-        patch("src.logic.stock_finder.stats_calculator.calculate"),
+        patch("src.application.stock_finder.notifier.notify") as _m_notify,
+        patch("src.application.stock_finder.stats_calculator.calculate"),
         patch("os.remove"),
         patch("matplotlib.pyplot.savefig"),
         patch("matplotlib.pyplot.close"),
     ):
-        from src.logic import stock_finder
+        from src.application import stock_finder
 
         return stock_finder.run(stock_name)
 
@@ -89,13 +89,13 @@ class TestMainPipelineHappyPath:
 
         with (
             patch("yfinance.Ticker", return_value=mock_ticker),
-            patch("src.logic.stock_finder.notifier.notify", mock_notify),
-            patch("src.logic.stock_finder.stats_calculator.calculate"),
+            patch("src.application.stock_finder.notifier.notify", mock_notify),
+            patch("src.application.stock_finder.stats_calculator.calculate"),
             patch("os.remove"),
             patch("matplotlib.pyplot.savefig"),
             patch("matplotlib.pyplot.close"),
         ):
-            from src.logic import stock_finder
+            from src.application import stock_finder
 
             stock_finder.run("TST")
 

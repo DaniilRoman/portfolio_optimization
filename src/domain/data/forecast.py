@@ -4,7 +4,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.logic.data.schemas import validate_forecast_frame
+from src.domain.data.schemas import validate_forecast_frame
 
 
 @dataclass

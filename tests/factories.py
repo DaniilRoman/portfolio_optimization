@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 
-from src.logic.data.data import (
+from src.domain.data.data import (
     Allocation,
     AnalysisReport,
     Asset,
@@ -26,7 +26,7 @@ from src.logic.data.data import (
     StockInfo,
     TickerMetadata,
 )
-from src.logic.data.forecast import Forecast
+from src.domain.data.forecast import Forecast
 
 
 def make_profitability_data(**overrides: Any) -> ProfitabilityData:

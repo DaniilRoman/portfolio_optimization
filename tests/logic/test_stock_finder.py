@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock, call, patch
 
-from src.logic.data.data import AnalysisReport, StockInfo
-from src.logic.data.forecast import Forecast
+from src.domain.data.data import AnalysisReport, StockInfo
+from src.domain.data.forecast import Forecast
 from tests.factories import make_forecast, make_historic_df, make_stock_data, make_stock_info
 
 
@@ -25,11 +25,11 @@ class TestRunCallSequence:
 
         mocks: dict[str, MagicMock] = {}
         with (
-            patch("src.logic.stock_finder.downloader.download_stock_data", return_value=stock_info) as m_dl,
-            patch("src.logic.stock_finder.predicter.predict", return_value=forecast) as m_pred,
-            patch("src.logic.stock_finder.analyzer.analyses", return_value=analyses_result) as m_an,
-            patch("src.logic.stock_finder.notifier.notify") as m_notify,
-            patch("src.logic.stock_finder.stats_calculator.calculate") as m_stats,
+            patch("src.application.stock_finder.downloader.download_stock_data", return_value=stock_info) as m_dl,
+            patch("src.application.stock_finder.predicter.predict", return_value=forecast) as m_pred,
+            patch("src.application.stock_finder.analyzer.analyses", return_value=analyses_result) as m_an,
+            patch("src.application.stock_finder.notifier.notify") as m_notify,
+            patch("src.application.stock_finder.stats_calculator.calculate") as m_stats,
             patch("os.remove") as m_rm,
         ):
             mocks["download"] = m_dl
@@ -38,7 +38,7 @@ class TestRunCallSequence:
             mocks["notify"] = m_notify
             mocks["stats"] = m_stats
             mocks["remove"] = m_rm
-            from src.logic import stock_finder
+            from src.application import stock_finder
 
             result = stock_finder.run(stock_name)
 
@@ -80,15 +80,15 @@ class TestRunCallSequence:
 
     def test_picks_stock_name_when_none_given(self) -> None:
         with (
-            patch("src.logic.stock_finder.stock_picker.pick", return_value="SPY") as m_pick,
-            patch("src.logic.stock_finder.downloader.download_stock_data", return_value=make_stock_info(historic_data=make_historic_df(800))),
-            patch("src.logic.stock_finder.predicter.predict", return_value=make_forecast()),
-            patch("src.logic.stock_finder.analyzer.analyses", return_value=make_stock_data()),
-            patch("src.logic.stock_finder.notifier.notify"),
-            patch("src.logic.stock_finder.stats_calculator.calculate"),
+            patch("src.application.stock_finder.stock_picker.pick", return_value="SPY") as m_pick,
+            patch("src.application.stock_finder.downloader.download_stock_data", return_value=make_stock_info(historic_data=make_historic_df(800))),
+            patch("src.application.stock_finder.predicter.predict", return_value=make_forecast()),
+            patch("src.application.stock_finder.analyzer.analyses", return_value=make_stock_data()),
+            patch("src.application.stock_finder.notifier.notify"),
+            patch("src.application.stock_finder.stats_calculator.calculate"),
             patch("os.remove"),
         ):
-            from src.logic import stock_finder
+            from src.application import stock_finder
 
             stock_finder.run(None)
             m_pick.assert_called_once()
@@ -96,7 +96,7 @@ class TestRunCallSequence:
 
 class TestSliceWindow:
     def _call_slice(self, df, days: int):  # type: ignore[no-untyped-def]
-        from src.logic import stock_finder
+        from src.application import stock_finder
 
         return vars(stock_finder)["__slice"](df, days)
 

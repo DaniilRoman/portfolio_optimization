@@ -13,7 +13,7 @@ from hypothesis import strategies as st
 
 from config.configuration import settings
 from src.adapter.out.optimization import optimizer
-from src.logic.data.data import AnalysisReport, OptimizationResult
+from src.domain.data.data import AnalysisReport, OptimizationResult
 from tests.factories import make_stock_data
 
 # --------------------------------------------------------------------------

@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 
 from src.adapter.out.analyze import analyzer
-from src.logic.data.data import AnalysisReport, ProfitabilityData, StockInfo
-from src.logic.data.forecast import Forecast
+from src.domain.data.data import AnalysisReport, ProfitabilityData, StockInfo
+from src.domain.data.forecast import Forecast
 from tests.factories import make_forecast, make_stock_info, make_ticker_metadata
 
 

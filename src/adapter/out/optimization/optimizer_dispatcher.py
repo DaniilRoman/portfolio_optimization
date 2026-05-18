@@ -2,7 +2,7 @@
 import importlib
 
 from config.configuration import settings
-from src.logic.data.data import OptimizationResult, StockData
+from src.domain.data.data import OptimizationResult, StockData
 
 _OPTIMIZERS: dict[str, str] = {
     "ga": ".optimizer",

@@ -5,7 +5,7 @@ import cvxpy as cp
 import numpy as np
 
 from config.configuration import settings
-from src.logic.data.data import AnalysisReport, OptimizationResult
+from src.domain.data.data import AnalysisReport, OptimizationResult
 
 from .optimizer import (
     __get_etf_map,

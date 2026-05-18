@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, mock_open, patch
 import numpy as np
 
 from src.adapter.out.notify import notifier
-from src.logic.data.data import AnalysisReport, OptimizationResult, Portfolio, RiskMetrics
+from src.domain.data.data import AnalysisReport, OptimizationResult, Portfolio, RiskMetrics
 from tests.factories import make_allocation, make_stock_data
 
 
