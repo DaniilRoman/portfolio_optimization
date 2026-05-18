@@ -1,6 +1,7 @@
 """Genetic-algorithm portfolio optimizer using DEAP; reads tuning parameters from settings.ga; outputs OptimizationResult."""
 import random
 from collections.abc import Callable
+from typing import Any
 
 import requests
 from deap import algorithms, base, creator, tools
@@ -15,7 +16,11 @@ FUN_WEIGHTS_RISK_AWARE = (-1.0, 1.0)
 FUN_WEIGHTS_PROFIT_ONLY = (-1.0, 1.0)
 
 
-def __gen_one_individual(max_count_data, current_prices=None, budget=None):
+def __gen_one_individual(
+    max_count_data: list[int],
+    current_prices: list[float] | None = None,
+    budget: float | None = None,
+) -> list[int]:
     """Generate a random individual that respects budget constraints."""
     if current_prices is not None and budget is not None:
         # Try to generate individuals that respect budget
@@ -53,7 +58,12 @@ def __gen_one_individual(max_count_data, current_prices=None, budget=None):
         return [random.randint(0, max_count) for max_count in max_count_data]
 
 
-def __evaluate(individual, predicted_prices, prices, budget):
+def __evaluate(
+    individual: list[int],
+    predicted_prices: list[float],
+    prices: list[float],
+    budget: float,
+) -> tuple[float, float]:
     predicted_cost = sum(x * y for x, y in zip(predicted_prices, individual, strict=False))
     cost = sum(x * y for x, y in zip(prices, individual, strict=False))
 
@@ -62,7 +72,11 @@ def __evaluate(individual, predicted_prices, prices, budget):
     return abs(budget - cost), predicted_cost - cost
 
 
-def __calculate_volatility_risk(individual, stocks, current_prices):
+def __calculate_volatility_risk(
+    individual: list[int],
+    stocks: list[StockData],
+    current_prices: list[float],
+) -> float:
     """
     Calculate portfolio volatility risk using historical volatility and GARCH forecasts.
     Returns normalized risk score (higher = more volatile = worse).
@@ -111,19 +125,23 @@ def __calculate_volatility_risk(individual, stocks, current_prices):
     return combined_risk
 
 
-def __calculate_sector_concentration_risk(individual, stocks, current_prices):
+def __calculate_sector_concentration_risk(
+    individual: list[int],
+    stocks: list[StockData],
+    current_prices: list[float],
+) -> float:
     """
     Calculate sector concentration risk.
     Returns a penalty score (higher = more concentrated = worse)
     """
     # Calculate total portfolio value
     total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
-    
+
     if total_value == 0:
         return 0.0
-    
+
     # Aggregate sector exposure across all ETFs
-    sector_exposure = {}
+    sector_exposure: dict[str, float] = {}
     
     for i, shares in enumerate(individual):
         if shares == 0:
@@ -155,18 +173,22 @@ def __calculate_sector_concentration_risk(individual, stocks, current_prices):
     return concentration_risk
 
 
-def __calculate_company_overlap_risk(individual, stocks, current_prices):
+def __calculate_company_overlap_risk(
+    individual: list[int],
+    stocks: list[StockData],
+    current_prices: list[float],
+) -> float:
     """
     Calculate risk from overlapping company holdings across ETFs.
     Uses top_holdings data (np.ndarray format) to identify concentration.
     """
     total_value = sum(individual[i] * current_prices[i] for i in range(len(individual)))
-    
+
     if total_value == 0:
         return 0.0
-    
+
     # Aggregate company exposure across all ETFs
-    company_exposure = {}
+    company_exposure: dict[str, float] = {}
     
     for i, shares in enumerate(individual):
         if shares == 0:
@@ -206,7 +228,11 @@ def __calculate_company_overlap_risk(individual, stocks, current_prices):
     return overlap_risk
 
 
-def __create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:
+def __create_toolbox(
+    eval_func: Callable[..., Any],
+    weights: tuple[float, ...],
+    mutFlipBit: Callable[..., Any],
+) -> Toolbox:
     # Check if creator classes already exist to avoid warnings
     if not hasattr(creator, "FitnessFunc"):
         creator.create("FitnessFunc", base.Fitness, weights=weights)
@@ -221,7 +247,10 @@ def __create_toolbox(eval_func, weights: tuple, mutFlipBit) -> Toolbox:
     return toolbox
 
 
-def __optimize_internal(toolbox, gen_individual_func):
+def __optimize_internal(
+    toolbox: Toolbox,
+    gen_individual_func: Callable[[], list[int]],
+) -> Any:
     pop = [creator.Individual(gen_individual_func()) for i in range(settings.ga.population)]
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses, strict=False):
@@ -230,7 +259,9 @@ def __optimize_internal(toolbox, gen_individual_func):
     return algorithms.eaSimple(pop, toolbox, cxpb=settings.ga.crossover_rate, mutpb=settings.ga.mutation_rate, ngen=settings.ga.generations)
 
 
-def _prepare_stock_data(stocks: list[StockData]):
+def _prepare_stock_data(
+    stocks: list[StockData],
+) -> tuple[list[str], list[float], list[float], list[float], list[float]]:
     """Extract and prepare stock data for optimization."""
     tickers = [stock.asset.ticker_symbol for stock in stocks]
     current_prices = [stock.market.current_price for stock in stocks]
@@ -241,7 +272,7 @@ def _prepare_stock_data(stocks: list[StockData]):
     return tickers, current_prices, predicted_prices, dividend_yields, expense_ratios
 
 
-def _calculate_max_shares(current_prices: list[float], max_per_etf_budget: float = 50.0):
+def _calculate_max_shares(current_prices: list[float], max_per_etf_budget: float = 50.0) -> list[int]:
     """Calculate maximum shares per ETF based on budget constraints."""
     max_shares_per_stock = []
     for price in current_prices:
@@ -257,7 +288,7 @@ def _calculate_max_shares(current_prices: list[float], max_per_etf_budget: float
     return max_shares_per_stock
 
 
-def _create_ownership_weights(tickers: list[str], etf_map: dict[str, int]):
+def _create_ownership_weights(tickers: list[str], etf_map: dict[str, int]) -> list[float]:
     """Calculate diversification weights based on current ownership."""
     ownership_weights = []
     for ticker in tickers:
@@ -278,11 +309,11 @@ def _create_evaluator_factory(
     ownership_weights: list[float],
     stocks: list[StockData],
     budget: float,
-    include_risk: bool = True
-) -> Callable:
+    include_risk: bool = True,
+) -> Callable[[Any], tuple[float, float]]:
     """Create an evaluator function for the genetic algorithm."""
-    
-    def evaluate_func(individual):
+
+    def evaluate_func(individual: Any) -> tuple[float, float]:
         # Calculate cost and predicted profit
         total_cost = sum(x * y for x, y in zip(current_prices, individual, strict=False))
         
@@ -385,16 +416,14 @@ def _run_genetic_algorithm_with_map(
     )
     
     # Create mutation function
-    def mutFlipBit(individual, indpb):
+    def mutFlipBit(individual: Any, indpb: float) -> tuple[Any]:
         for i in range(len(individual)):
             if random.random() < indpb:
-                # Mutate to a random value within bounds (0 to max_shares_per_stock[i])
-                # This is better than simple flip as it explores more of the search space
                 individual[i] = random.randint(0, max_shares_per_stock[i])
-        return individual,
-    
+        return (individual,)
+
     # Create individual generator
-    def gen_one_individual_wrapper():
+    def gen_one_individual_wrapper() -> list[int]:
         return __gen_one_individual(max_shares_per_stock, current_prices, budget)
     
     # Select weights based on risk inclusion
@@ -468,7 +497,7 @@ def optimize(stocks: list[StockData], budget: float = 50.0, max_per_etf_budget: 
         profit_only=_build_portfolio(profit_individual, p_stocks, p_prices, p_predicted, p_div, p_exp, p_tickers),
     )
 
-def __get_etf_map():
-    etf_to_count = requests.get(settings.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})    
-    return etf_to_count.json()
+def __get_etf_map() -> dict[str, int]:
+    etf_to_count = requests.get(settings.GET_AND_INCREMENT_COUNTER_URL, params={"etf": "true"})
+    return etf_to_count.json()  # type: ignore[no-any-return]
   

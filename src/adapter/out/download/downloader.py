@@ -11,6 +11,7 @@ import yfinance as yf
 from src.infrastructure.utils import utils
 from src.logic.data import data
 from src.logic.data.data import StockInfo, TickerMetadata
+from src.logic.data.schemas import validate_history_frame
 
 
 def __search_stocks(stock_name_query: str) -> list[str]:
@@ -83,6 +84,7 @@ def download_stock_data(
     historic_data = historic_data.sort_index()
 
     ticker_meta = _extract_ticker_metadata(stock)
+    validate_history_frame(historic_data)
     logging.debug("Downloaded %s: %d rows, last price %.2f", stock_name, len(historic_data), historic_data["y"].iloc[-1])
 
     return StockInfo(historic_data=historic_data, ticker=ticker_meta)

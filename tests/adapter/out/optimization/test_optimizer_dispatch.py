@@ -6,7 +6,7 @@ import pytest
 
 from config.configuration import settings
 from src.adapter.out.optimization import optimizer_dispatcher
-from src.logic.data.data import OptimizationResult
+from src.logic.data.data import AnalysisReport, OptimizationResult
 from tests.factories import make_optimization_result, make_stock_data
 
 _BACKEND_TARGET: dict[str, str] = {
@@ -15,7 +15,7 @@ _BACKEND_TARGET: dict[str, str] = {
 }
 
 
-def _make_stocks() -> list:
+def _make_stocks() -> list[AnalysisReport]:
     return [make_stock_data() for _ in range(3)]
 
 

@@ -1,8 +1,10 @@
 """Forecast value object wrapping a prediction DataFrame with typed accessors for final price, uncertainty band, and volatility."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import pandas as pd
+
+from src.logic.data.schemas import validate_forecast_frame
 
 
 @dataclass
@@ -16,7 +18,10 @@ class Forecast:
     """
 
     series: pd.DataFrame
-    model: Any = None
+    model: Any = field(default=None)
+
+    def __post_init__(self) -> None:
+        validate_forecast_frame(self.series)
 
     def final_price(self) -> float:
         return float(self.series["yhat"].iloc[-1])

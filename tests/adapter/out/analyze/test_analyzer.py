@@ -154,11 +154,11 @@ def test_pessimistic_predict_price_calculation():
     mock_model = MagicMock()
 
     two_year_forecast = Forecast(
-        series=pd.DataFrame({"yhat": [200.0] * 10, "yhat_lower": [195.0] * 10, "yhat_upper": [205.0] * 10}, index=future_dates),
+        series=pd.DataFrame({"ds": future_dates, "yhat": [200.0] * 10, "yhat_lower": [195.0] * 10, "yhat_upper": [205.0] * 10}, index=future_dates),
         model=mock_model,
     )
     five_year_forecast = Forecast(
-        series=pd.DataFrame({"yhat": [210.0] * 10, "yhat_lower": [205.0] * 10, "yhat_upper": [215.0] * 10}, index=future_dates),
+        series=pd.DataFrame({"ds": future_dates, "yhat": [210.0] * 10, "yhat_lower": [205.0] * 10, "yhat_upper": [215.0] * 10}, index=future_dates),
         model=mock_model,
     )
 
@@ -181,11 +181,11 @@ def test_pessimistic_predict_price_with_different_values():
     mock_model = MagicMock()
 
     two_year_forecast = Forecast(
-        series=pd.DataFrame({"yhat": [205.0] * 10, "yhat_lower": [200.0] * 10, "yhat_upper": [210.0] * 10}, index=future_dates),
+        series=pd.DataFrame({"ds": future_dates, "yhat": [205.0] * 10, "yhat_lower": [200.0] * 10, "yhat_upper": [210.0] * 10}, index=future_dates),
         model=mock_model,
     )
     five_year_forecast = Forecast(
-        series=pd.DataFrame({"yhat": [195.0] * 10, "yhat_lower": [190.0] * 10, "yhat_upper": [200.0] * 10}, index=future_dates),
+        series=pd.DataFrame({"ds": future_dates, "yhat": [195.0] * 10, "yhat_lower": [190.0] * 10, "yhat_upper": [200.0] * 10}, index=future_dates),
         model=mock_model,
     )
 

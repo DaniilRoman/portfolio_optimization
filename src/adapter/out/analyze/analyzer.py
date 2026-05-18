@@ -114,7 +114,7 @@ def __is_stock_historicly_growing(current_price: float, history_slice: pd.DataFr
 
 
 def __last_price(one_stock_data: pd.DataFrame, column: str) -> float:
-    price = one_stock_data.tail(1)[column].iloc[0]
+    price = float(one_stock_data.tail(1)[column].iloc[0])
     if price < 1:
         return round(price, 4)
     elif price < 10:

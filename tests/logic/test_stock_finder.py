@@ -98,7 +98,7 @@ class TestSliceWindow:
     def _call_slice(self, df, days: int):  # type: ignore[no-untyped-def]
         from src.logic import stock_finder
 
-        return vars(stock_finder)["__slice"](df, days)  # type: ignore[no-any-return]
+        return vars(stock_finder)["__slice"](df, days)
 
     def test_slice_returns_two_year_window(self) -> None:
         df = make_historic_df(n=800)
