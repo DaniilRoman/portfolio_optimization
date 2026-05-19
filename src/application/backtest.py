@@ -115,16 +115,16 @@ def _cli() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    # Resolve tickers for the universe
-    from config import de_etf_list, stock_names
+    # Resolve tickers for the universe (point-in-time — avoids survivorship bias)
+    from config.universe import resolve_universe
 
-    universe_map: dict[str, list[str]] = {
-        "de_etf": de_etf_list.de_etf if hasattr(de_etf_list, "de_etf") else [],
-        "sp500": stock_names.sp500_stocks() if hasattr(stock_names, "sp500_stocks") else [],
-    }
-    tickers = universe_map.get(args.universe, [])[:20]  # cap at 20 for CLI demo
+    try:
+        tickers = resolve_universe(args.universe, as_of=args.start)[:20]  # cap at 20 for CLI demo
+    except FileNotFoundError:
+        print(f"Unknown universe '{args.universe}'. Available: sp500, etf, de_etf, ishares, vanguard")
+        return
     if not tickers:
-        print(f"Unknown universe '{args.universe}' or empty ticker list.")
+        print(f"Universe '{args.universe}' resolved to an empty list for {args.start}.")
         return
 
     print(f"Loading prices for {len(tickers)} tickers ({args.start} → {args.end}) ...")
