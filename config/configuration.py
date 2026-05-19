@@ -28,6 +28,11 @@ class CVXPYSettings(BaseModel):
     risk_gamma: float = 0.01
 
 
+class HRPSettings(BaseModel):
+    linkage_method: Literal["single", "complete", "average", "ward"] = "single"
+    risk_measure: Literal["variance", "cvar"] = "variance"
+
+
 class BacktestSettings(BaseModel):
     train_window_days: int = 252
     rebalance_days: int = 21
@@ -45,7 +50,9 @@ class Settings(BaseSettings):
     APP_ENV: Literal["dev", "prod", "backtest"] = "prod"
     TELEGRAM_ENABLED: bool = True
     PREDICTER: Literal["garch", "prophet"] = "garch"
-    OPTIMIZER: Literal["ga", "cvxpy"] = "ga"
+    OPTIMIZER: Literal["ga", "cvxpy", "hrp"] = "ga"
+    EXPECTED_RETURNS: Literal["mean", "bl"] = "mean"
+    FACTOR_SCREEN_PERCENTILE: float = 0.0
     UNIVERSE: Literal["sp500", "etf", "de_etf", "ishares", "vanguard"] = "etf"
     BENCHMARK: dict[str, str] = {
         "sp500": "SPY",
@@ -57,6 +64,7 @@ class Settings(BaseSettings):
     RISK_FREE_SERIES: str = "DGS3MO"
     ga: GASettings = GASettings()
     cvxpy: CVXPYSettings = CVXPYSettings()
+    hrp: HRPSettings = HRPSettings()
     backtest: BacktestSettings = BacktestSettings()
 
     # Profile file is loaded after .env; env vars in the shell win over both.

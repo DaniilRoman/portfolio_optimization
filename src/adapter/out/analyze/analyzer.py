@@ -1,10 +1,14 @@
 """Builds an AnalysisReport aggregate from StockInfo + Forecast; generates two/five-year price-history chart images."""
 
+import math
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from src.domain.data.data import AnalysisReport, Asset, ForecastSummary, MarketSnapshot, ProfitabilityData, StockInfo
 from src.domain.data.forecast import Forecast
+
+_HORIZON_YEARS = 3.5  # geometric midpoint between 2-year and 5-year forecast horizons
 
 
 def analyses(
@@ -16,16 +20,22 @@ def analyses(
     meta = stock_info.ticker
     current_price = __last_price(stock_info.historic_data, "y")
 
-    predict_price = min(two_year_forecast.lower_price(), five_year_forecast.lower_price())
-    two_year_last_predicted = two_year_forecast.final_price()
-    five_year_last_predicted = five_year_forecast.final_price()
+    two_year_point = two_year_forecast.final_price()
+    five_year_point = five_year_forecast.final_price()
+    mean_forecast = (two_year_point + five_year_point) / 2
+    # Use the unbiased mean point estimate instead of the lower uncertainty band
+    predict_price = mean_forecast
 
     forecast_uncertainty = two_year_forecast.uncertainty_band()
     forecast_volatility = two_year_forecast.volatility()
 
-    is_stock_growing = __is_stock_growing(
-        current_price, two_year_last_predicted, five_year_last_predicted, stock_info.historic_data
-    )
+    # Annualised log-return view for Black-Litterman (§4.3)
+    if current_price > 0 and mean_forecast > 0:
+        expected_log_return = math.log(mean_forecast / current_price) / _HORIZON_YEARS
+    else:
+        expected_log_return = 0.0
+
+    is_stock_growing = __is_stock_growing(current_price, two_year_point, five_year_point, stock_info.historic_data)
 
     two_year_forecast.plot(two_year_forecast.series)
     two_year_file_name = f"two_year_{ticker_symbol}.png"
@@ -36,6 +46,7 @@ def analyses(
     plt.savefig(five_year_file_name)
 
     standard_deviation = __calc_std(stock_info.historic_data)
+    momentum_12_1 = __calc_momentum_12_1(stock_info.historic_data)
 
     profitability_data = ProfitabilityData(
         ebitda_margins=meta.ebitda_margins,
@@ -68,12 +79,24 @@ def analyses(
             forecast_volatility=forecast_volatility,
             two_year_file_name=two_year_file_name,
             five_year_file_name=five_year_file_name,
+            expected_log_return=expected_log_return,
         ),
         top_holdings=meta.top_holdings,
         sector_allocation=meta.sector_weights,
         is_stock_growing=is_stock_growing,
         profitability_data=profitability_data,
+        momentum_12_1=momentum_12_1,
     )
+
+
+def __calc_momentum_12_1(historic_data: pd.DataFrame) -> float:
+    """12-1 month price return: return from 12 months ago to 1 month ago (skip recent month to avoid reversal)."""
+    prices = historic_data["y"]
+    if len(prices) < 253:
+        return 0.0
+    price_12m_ago = float(prices.iloc[-253])  # ~252 trading days ≈ 12 months
+    price_1m_ago = float(prices.iloc[-22])  # skip last 21 trading days ≈ 1 month
+    return (price_1m_ago - price_12m_ago) / price_12m_ago if price_12m_ago > 0 else 0.0
 
 
 def __calc_std(historic_data: pd.DataFrame) -> float:
@@ -83,12 +106,6 @@ def __calc_std(historic_data: pd.DataFrame) -> float:
     if returns.empty:
         return 0.0
     return float(returns.std() * (252**0.5))
-
-
-def __predicted_price(two_year_predicted_prices: pd.DataFrame, five_year_predicted_prices: pd.DataFrame) -> float:
-    two_year_min = __last_price(two_year_predicted_prices, "yhat_lower")
-    five_year_min = __last_price(five_year_predicted_prices, "yhat_lower")
-    return min(two_year_min, five_year_min)
 
 
 def __is_stock_growing(

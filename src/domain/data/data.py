@@ -74,6 +74,7 @@ class ForecastSummary:
     forecast_volatility: float
     two_year_file_name: str
     five_year_file_name: str
+    expected_log_return: float = 0.0  # annualised log return; input view for Black-Litterman (§4.3)
 
 
 @dataclass
@@ -87,6 +88,7 @@ class AnalysisReport:
     sector_allocation: dict[str, float]
     is_stock_growing: bool
     profitability_data: ProfitabilityData
+    momentum_12_1: float = 0.0  # 12-1 month price return; momentum factor for §4.5 scoring
 
 
 # Backward-compatible alias so existing imports of StockData keep working.

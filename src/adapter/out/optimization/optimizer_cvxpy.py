@@ -26,6 +26,7 @@ def _build_expected_net_profit_per_share(
     dividend_yields: list[float],
     expense_ratios: list[float],
     ownership_weights: list[float],
+    bl_mu: np.ndarray | None = None,
 ) -> np.ndarray:
     mu = np.zeros(len(stocks), dtype=float)
 
@@ -35,7 +36,13 @@ def _build_expected_net_profit_per_share(
         dividend_yield = float(dividend_yields[i])
         expense_ratio = float(expense_ratios[i])
         ownership_weight = float(ownership_weights[i])
-        expected_gain_per_share = predicted_price - current_price
+
+        if bl_mu is not None:
+            # Black-Litterman posterior: simple annual return → expected gain per share
+            expected_gain_per_share = current_price * float(bl_mu[i])
+        else:
+            expected_gain_per_share = predicted_price - current_price
+
         dividend_income_per_share = current_price * dividend_yield
         expense_fee_per_share = current_price * expense_ratio
         net_profit_per_share = expected_gain_per_share + dividend_income_per_share - expense_fee_per_share
@@ -115,6 +122,7 @@ def _run_cvxpy_optimization_with_map(
     etf_map: dict[str, int],
     include_risk: bool = True,
     sigma: np.ndarray | None = None,
+    bl_mu: np.ndarray | None = None,
 ) -> tuple[list[int], list[StockData], list[float], list[float], list[float], list[float], list[str]]:
     tickers, current_prices, predicted_prices, dividend_yields, expense_ratios = _prepare_stock_data(stocks)
     max_shares_per_stock = np.asarray(_calculate_max_shares(current_prices, max_per_etf_budget), dtype=int)
@@ -132,6 +140,7 @@ def _run_cvxpy_optimization_with_map(
         dividend_yields_arr.tolist(),
         expense_ratios_arr.tolist(),
         ownership_weights,
+        bl_mu=bl_mu,
     )
 
     A_sector, _sectors = _build_sector_matrix(stocks)
@@ -237,6 +246,7 @@ def optimize(
     budget: float = 50.0,
     max_per_etf_budget: float = 50.0,
     sigma: np.ndarray | None = None,
+    mu: np.ndarray | None = None,
 ) -> OptimizationResult:
     if max_per_etf_budget is None:
         max_per_etf_budget = min(50.0, budget / 2)
@@ -246,7 +256,7 @@ def optimize(
     etf_map = __get_etf_map()
 
     risk_individual, r_stocks, r_prices, r_predicted, r_div, r_exp, r_tickers = _run_cvxpy_optimization_with_map(
-        stocks, budget, max_per_etf_budget, etf_map, include_risk=True, sigma=sigma
+        stocks, budget, max_per_etf_budget, etf_map, include_risk=True, sigma=sigma, bl_mu=mu
     )
     profit_individual, p_stocks, p_prices, p_predicted, p_div, p_exp, p_tickers = _run_cvxpy_optimization_with_map(
         stocks, budget, max_per_etf_budget, etf_map, include_risk=False

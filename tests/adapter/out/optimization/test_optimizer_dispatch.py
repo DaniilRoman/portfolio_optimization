@@ -12,6 +12,7 @@ from tests.factories import make_optimization_result, make_stock_data
 _BACKEND_TARGET: dict[str, str] = {
     "ga": "src.adapter.out.optimization.optimizer.optimize",
     "cvxpy": "src.adapter.out.optimization.optimizer_cvxpy.optimize",
+    "hrp": "src.adapter.out.optimization.optimizer_hrp.optimize",
 }
 
 

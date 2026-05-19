@@ -141,12 +141,26 @@ def make_stock_data(**overrides: Any) -> AnalysisReport:
             "forecast_volatility",
             "two_year_file_name",
             "five_year_file_name",
+            "expected_log_return",
+        }
+    }
+    profitability_fields = {
+        k: overrides.pop(k)
+        for k in list(overrides)
+        if k
+        in {
+            "trailing_eps",
+            "forward_eps",
+            "netIncome_to_common",
+            "ebitda_margins",
+            "operating_margins",
         }
     }
 
     asset = overrides.pop("asset", make_asset(**asset_fields))
     market = overrides.pop("market", make_market_snapshot(**market_fields))
     forecast = overrides.pop("forecast", make_forecast_summary(**forecast_fields))
+    profitability_data = overrides.pop("profitability_data", make_profitability_data(**profitability_fields))
 
     defaults: dict[str, Any] = dict(
         asset=asset,
@@ -155,7 +169,7 @@ def make_stock_data(**overrides: Any) -> AnalysisReport:
         top_holdings=np.array([["Apple Inc", 0.08], ["Microsoft Corp", 0.07]]),
         sector_allocation={"Technology": 0.45, "Healthcare": 0.30, "Financials": 0.25},
         is_stock_growing=True,
-        profitability_data=make_profitability_data(),
+        profitability_data=profitability_data,
     )
     defaults.update(overrides)
     return AnalysisReport(**defaults)

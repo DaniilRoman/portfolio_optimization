@@ -146,9 +146,9 @@ def test_analyses_with_empty_description():
     print("  ✅ Empty description handled correctly")
 
 
-def test_pessimistic_predict_price_calculation():
-    """Test the pessimistic predict_price uses min of yhat_lower values"""
-    print("Testing pessimistic predict_price calculation...")
+def test_predict_price_is_mean_of_point_estimates():
+    """predict_price is the mean of two-year and five-year yhat final values (unbiased point estimate)."""
+    print("Testing predict_price calculation...")
     ticker_symbol = "TEST"
     stock_info = make_stock_info()
 
@@ -172,16 +172,17 @@ def test_pessimistic_predict_price_calculation():
 
     result = _run_analyses(ticker_symbol, stock_info, two_year_forecast, five_year_forecast)
 
-    expected_predict_price = 195.0
+    # predict_price = mean of two_year.final_price() and five_year.final_price() = (200 + 210) / 2
+    expected_predict_price = 205.0
     print(f"  Expected predict_price: {expected_predict_price}")
     print(f"  Actual predict_price: {result.forecast.predict_price}")
     assert round(result.forecast.predict_price, 2) == round(expected_predict_price, 2)
-    print("  ✅ Pessimistic predict_price calculation test passed")
+    print("  ✅ predict_price calculation test passed")
 
 
-def test_pessimistic_predict_price_with_different_values():
-    """Test pessimistic calculation when five-year minimum is lower"""
-    print("Testing pessimistic predict_price with different values...")
+def test_predict_price_mean_when_five_year_lower():
+    """predict_price uses mean of point estimates regardless of which forecast is higher."""
+    print("Testing predict_price with different values...")
     ticker_symbol = "TEST"
     stock_info = make_stock_info()
 
@@ -205,8 +206,9 @@ def test_pessimistic_predict_price_with_different_values():
 
     result = _run_analyses(ticker_symbol, stock_info, two_year_forecast, five_year_forecast)
 
-    expected_predict_price = 190.0
+    # predict_price = (205 + 195) / 2 = 200
+    expected_predict_price = 200.0
     print(f"  Expected predict_price: {expected_predict_price}")
     print(f"  Actual predict_price: {result.forecast.predict_price}")
     assert round(result.forecast.predict_price, 2) == round(expected_predict_price, 2)
-    print("  ✅ Pessimistic predict_price with different values test passed")
+    print("  ✅ predict_price mean calculation test passed")
