@@ -21,6 +21,7 @@ pydantic-settings = ">=2.0"
 pyarrow = ">=15.0"
 scikit-learn = ">=1.4"
 pyportfolioopt = ">=1.5"
+optuna = ">=4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -57,7 +58,7 @@ module = [
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = ["pypfopt.*"]
+module = ["pypfopt.*", "optuna.*"]
 ignore_missing_imports = true
 ignore_errors = true
 

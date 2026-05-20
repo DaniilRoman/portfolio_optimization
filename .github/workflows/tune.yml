@@ -1,0 +1,86 @@
+name: Hyperparameter tune (manual)
+
+# Manual-only: parameter sweeps are expensive, noisy on short runs, and must be
+# reviewed by a human before any winner is committed to prod.env. Do NOT add a
+# `schedule:` trigger — see .specs/PARAMS_OPTIMISATION.md §5.
+
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "Universe name (sp500, etf, de_etf, ishares, vanguard)"
+        required: true
+        default: "de_etf"
+      start:
+        description: "Start date (YYYY-MM-DD) — full tuning + holdout window"
+        required: true
+        default: "2018-01-01"
+      end:
+        description: "End date (YYYY-MM-DD)"
+        required: true
+        default: "2024-12-31"
+      holdout_days:
+        description: "Trading days reserved for untouched hold-out evaluation"
+        required: true
+        default: "252"
+      trials:
+        description: "Number of Optuna trials"
+        required: true
+        default: "100"
+      max_tickers:
+        description: "Cap on universe size (keeps each trial fast)"
+        required: true
+        default: "20"
+
+permissions:
+  contents: read
+
+jobs:
+  tune:
+    name: Run Optuna sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: poetry-
+
+      - name: Install deps
+        run: poetry install --no-interaction
+
+      - name: Run hyperparameter sweep
+        run: |
+          mkdir -p data/tuning
+          poetry run python -m src.application.tune \
+            --universe "${{ inputs.universe }}" \
+            --start "${{ inputs.start }}" \
+            --end "${{ inputs.end }}" \
+            --holdout-days "${{ inputs.holdout_days }}" \
+            --trials "${{ inputs.trials }}" \
+            --max-tickers "${{ inputs.max_tickers }}" \
+            --storage-dir data/tuning \
+            | tee data/tuning/report.txt
+
+      - name: Upload Optuna study and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: tune-${{ inputs.universe }}-${{ inputs.start }}-${{ inputs.end }}
+          path: |
+            data/tuning/*.db
+            data/tuning/report.txt
+          if-no-files-found: error
+          retention-days: 90
