@@ -28,14 +28,12 @@ class TestRunCallSequence:
             patch("src.application.stock_finder.downloader.download_stock_data", return_value=stock_info) as m_dl,
             patch("src.application.stock_finder.predicter.predict", return_value=forecast) as m_pred,
             patch("src.application.stock_finder.analyzer.analyses", return_value=analyses_result) as m_an,
-            patch("src.application.stock_finder.notifier.notify") as m_notify,
             patch("src.application.stock_finder.stats_calculator.calculate") as m_stats,
             patch("os.remove") as m_rm,
         ):
             mocks["download"] = m_dl
             mocks["predict"] = m_pred
             mocks["analyze"] = m_an
-            mocks["notify"] = m_notify
             mocks["stats"] = m_stats
             mocks["remove"] = m_rm
             from src.application import stock_finder
@@ -62,10 +60,6 @@ class TestRunCallSequence:
         _, mocks = self._run_with_patches()
         mocks["analyze"].assert_called_once()
 
-    def test_notifier_called_once(self) -> None:
-        _, mocks = self._run_with_patches()
-        mocks["notify"].assert_called_once()
-
     def test_stats_calculator_called_once(self) -> None:
         _, mocks = self._run_with_patches()
         mocks["stats"].assert_called_once()
@@ -87,7 +81,6 @@ class TestRunCallSequence:
             ),
             patch("src.application.stock_finder.predicter.predict", return_value=make_forecast()),
             patch("src.application.stock_finder.analyzer.analyses", return_value=make_stock_data()),
-            patch("src.application.stock_finder.notifier.notify"),
             patch("src.application.stock_finder.stats_calculator.calculate"),
             patch("os.remove"),
         ):

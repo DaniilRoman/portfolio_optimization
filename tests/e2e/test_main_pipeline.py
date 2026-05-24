@@ -59,7 +59,6 @@ def _run_pipeline(stock_name: str = "TST") -> AnalysisReport | None:
 
     with (
         patch("yfinance.Ticker", return_value=mock_ticker),
-        patch("src.application.stock_finder.notifier.notify") as _m_notify,
         patch("src.application.stock_finder.stats_calculator.calculate"),
         patch("os.remove"),
         patch("matplotlib.pyplot.savefig"),
@@ -81,25 +80,6 @@ class TestMainPipelineHappyPath:
         assert result.market.current_price > 0
         assert result.forecast.predict_price > 0
         assert result.asset.currency == "USD"
-
-    def test_pipeline_calls_notifier(self) -> None:
-        hist = _load_fixture_hist()
-        mock_ticker = _make_mock_ticker(hist)
-        mock_notify = MagicMock()
-
-        with (
-            patch("yfinance.Ticker", return_value=mock_ticker),
-            patch("src.application.stock_finder.notifier.notify", mock_notify),
-            patch("src.application.stock_finder.stats_calculator.calculate"),
-            patch("os.remove"),
-            patch("matplotlib.pyplot.savefig"),
-            patch("matplotlib.pyplot.close"),
-        ):
-            from src.application import stock_finder
-
-            stock_finder.run("TST")
-
-        mock_notify.assert_called_once()
 
     def test_optimizer_produces_optimization_result(self) -> None:
         from tests.factories import make_stock_data

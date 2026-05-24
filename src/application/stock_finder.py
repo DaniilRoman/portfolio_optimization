@@ -7,7 +7,6 @@ import pandas as pd
 
 from src.adapter.out.analyze import analyzer
 from src.adapter.out.download import downloader
-from src.adapter.out.notify import notifier
 from src.adapter.out.predict import predicter
 from src.adapter.out.stats import stats_calculator
 from src.adapter.out.stock_pick import stock_picker
@@ -35,7 +34,6 @@ def run(stock_name: str | None = None) -> AnalysisReport | None:
         two_year_forecast=two_year_forecast,
         five_year_forecast=five_year_forecast,
     )
-    notifier.notify(analyses_result)
     stats_calculator.calculate(analyses_result)
     __clean_artifacts(analyses_result)
     return analyses_result
